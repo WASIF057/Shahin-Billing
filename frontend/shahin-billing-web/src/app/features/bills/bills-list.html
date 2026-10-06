@@ -1,0 +1,123 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>All bills</h1>
+      <p>Search, filter, and see who has paid.</p>
+    </div>
+    <div class="actions">
+      <a pButton routerLink="/bills/new" label="Create bill" icon="pi pi-plus"></a>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="filters">
+      <p-iconfield>
+        <p-inputicon styleClass="pi pi-search" />
+        <input pInputText type="text" placeholder="Bill number or client" [ngModel]="search" (ngModelChange)="onSearch($event)" />
+      </p-iconfield>
+      <p-select [options]="clients()" optionLabel="name" optionValue="id" [(ngModel)]="clientId" (onChange)="filterChanged()"
+                [filter]="true" filterBy="name" placeholder="All clients" [showClear]="true" [fluid]="true" appendTo="body" />
+      <p-datepicker [(ngModel)]="from" (ngModelChange)="filterChanged()" placeholder="From" dateFormat="dd-mm-yy"
+                    [showClear]="true" [fluid]="true" appendTo="body" />
+      <p-datepicker [(ngModel)]="to" (ngModelChange)="filterChanged()" placeholder="To" dateFormat="dd-mm-yy"
+                    [showClear]="true" [fluid]="true" appendTo="body" />
+      <p-select [options]="statusOptions" optionLabel="label" optionValue="value" [(ngModel)]="status" (onChange)="filterChanged()"
+                placeholder="Any status" [showClear]="true" [fluid]="true" appendTo="body" />
+      <p-select [options]="paymentOptions" optionLabel="label" optionValue="value" [(ngModel)]="paymentStatus" (onChange)="filterChanged()"
+                placeholder="Any payment" [showClear]="true" [fluid]="true" appendTo="body" />
+    </div>
+
+    <p-table [value]="bills()" [lazy]="true" (onLazyLoad)="onLazy($event)" [paginator]="true" [rows]="pageSize"
+             [totalRecords]="total()" [loading]="loading()" [rowsPerPageOptions]="[20, 50, 100]" dataKey="id" [rowHover]="true">
+      <ng-template #header>
+        <tr>
+          <th>Bill no.</th><th>Date</th><th>Client</th><th class="num">Amount</th><th class="num">Balance</th><th>Status</th><th></th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-b>
+        <tr>
+          <td>
+            <a class="no" [routerLink]="['/bills', b.id]">{{ b.invoiceNumber }}</a>
+            @if (b.isNonGst) { <p-tag severity="secondary" value="Non-GST" [rounded]="true" styleClass="ng-tag" /> }
+          </td>
+          <td>{{ b.invoiceDate | date: 'dd-MM-yyyy' }}</td>
+          <td>{{ b.clientName }}</td>
+          <td class="num">{{ b.grandTotal | inr }}</td>
+          <td class="num">{{ b.status === 'Cancelled' ? '—' : (b.balanceDue | inr) }}</td>
+          <td>
+            <div class="status-cell">
+              @if (b.status === 'Final') {
+                <button type="button" class="pay-link" (click)="openStatus(b)" title="Change payment status">
+                  <app-status-tag [status]="b.status" [payment]="b.paymentStatus" />
+                </button>
+              } @else {
+                <app-status-tag [status]="b.status" [payment]="b.paymentStatus" />
+              }
+              <button pButton type="button" icon="pi pi-eye" [text]="true" size="small" pTooltip="View" [routerLink]="['/bills', b.id]" aria-label="View bill"></button>
+              @if (b.status !== 'Cancelled') {
+                <button pButton type="button" icon="pi pi-pencil" [text]="true" size="small" pTooltip="Edit" [routerLink]="['/bills', b.id, 'edit']" aria-label="Edit bill"></button>
+              }
+            </div>
+          </td>
+          <td class="row-actions">
+            <button pButton type="button" icon="pi pi-ellipsis-v" [text]="true" aria-label="Actions"
+                    (click)="openMenu(menu, $event, b)"></button>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr><td colspan="7">
+          <div class="empty">
+            <h3>No bills found</h3>
+            <p>Try clearing the filters, or create your first bill.</p>
+            <button pButton type="button" label="Clear filters" [text]="true" (click)="clear()"></button>
+          </div>
+        </td></tr>
+      </ng-template>
+    </p-table>
+    <p-menu #menu [model]="menuItems" [popup]="true" appendTo="body" />
+  </div>
+</div>
+
+<p-dialog header="Change payment status" [visible]="statusOpen()" (visibleChange)="statusOpen.set($event)"
+          [modal]="true" [style]="{ width: '440px' }" [breakpoints]="{ '520px': '96vw' }" [draggable]="false">
+  @if (statusBill(); as b) {
+    <div class="pay-body">
+      <div class="muted small">
+        {{ b.invoiceNumber }} · {{ b.clientName }}<br />
+        Total {{ b.grandTotal | inr }} · Balance due {{ b.balanceDue | inr }}
+      </div>
+
+      <p-selectbutton [options]="statusChoices" optionLabel="label" optionValue="value" [(ngModel)]="statusChoice" [allowEmpty]="false" />
+
+      @if (statusChoice === 'Unpaid') {
+        <p class="muted small" style="margin: 0">
+          This removes every payment recorded on this bill, so the full amount shows as due again.
+        </p>
+      } @else {
+        @if (statusChoice === 'Part') {
+          <div class="field">
+            <label for="payamt">Amount received</label>
+            <p-inputnumber inputId="payamt" [(ngModel)]="payAmount" [min]="0" [max]="b.balanceDue" [minFractionDigits]="2"
+                           [maxFractionDigits]="2" locale="en-IN" [fluid]="true" />
+          </div>
+        } @else {
+          <p class="muted small" style="margin: 0">Records the balance of {{ b.balanceDue | inr }} as received.</p>
+        }
+        <div class="field">
+          <label for="paymode">Paid by</label>
+          <p-select inputId="paymode" [options]="payModes" optionLabel="label" optionValue="value" [(ngModel)]="payMode"
+                    [fluid]="true" appendTo="body" />
+        </div>
+        <div class="field">
+          <label for="paydate">Date received</label>
+          <p-datepicker inputId="paydate" [(ngModel)]="payDate" dateFormat="dd-mm-yy" [showIcon]="true" [fluid]="true" appendTo="body" />
+        </div>
+      }
+    </div>
+  }
+  <ng-template #footer>
+    <button pButton type="button" label="Cancel" [text]="true" (click)="statusOpen.set(false)"></button>
+    <button pButton type="button" label="Save" icon="pi pi-check" [loading]="statusSaving()" (click)="saveStatus()"></button>
+  </ng-template>
+</p-dialog>

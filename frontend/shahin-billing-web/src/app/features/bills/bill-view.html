@@ -1,0 +1,203 @@
+<div class="page">
+  @if (inv(); as i) {
+    <div class="page-head">
+      <div>
+        <div class="title-row">
+          <h1>{{ i.invoiceNumber }}</h1>
+          <app-status-tag [status]="i.status" [payment]="i.paymentStatus" />
+        </div>
+        <p>{{ i.billTo.name }} · {{ i.invoiceDate | date: 'dd-MM-yyyy' }}</p>
+      </div>
+      <div class="actions">
+        <a pButton routerLink="/bills" label="All bills" [text]="true" icon="pi pi-arrow-left"></a>
+        @if (!cancelled()) {
+          <a pButton [routerLink]="['/bills', i.id, 'edit']" label="Edit" icon="pi pi-pencil" [outlined]="true"></a>
+        }
+        <button pButton type="button" label="Duplicate" icon="pi pi-copy" [outlined]="true" (click)="duplicate()"></button>
+        @if (i.status === 'Draft') {
+          <button pButton type="button" label="Finalize" icon="pi pi-check" (click)="finalize()"></button>
+        }
+      </div>
+    </div>
+
+    @if (cancelled()) {
+      <p-message severity="error" [style]="{ 'margin-bottom': '16px', display: 'block' }"
+                 [text]="'Cancelled on ' + (i.cancelledAt | date: 'dd-MM-yyyy') + (i.cancelReason ? ': ' + i.cancelReason : '') + '. The number stays used, as GST requires.'" />
+    }
+
+    <div class="layout">
+      <div>
+        <section class="panel bill">
+          <div class="parties">
+            <div>
+              <div class="label">Bill to</div>
+              <strong>{{ i.billTo.name }}</strong>
+              <div>{{ i.billTo.address.city }}</div>
+              @if (i.billTo.phone) { <div class="small">Mobile {{ i.billTo.phone }}</div> }
+              @if (i.billTo.gstin) { <div class="small">GSTIN {{ i.billTo.gstin }}</div> }
+            </div>
+            <div>
+              <div class="label">Ship to</div>
+              <strong>{{ i.shipTo.name }}</strong>
+              <div>{{ i.shipTo.address.city }}</div>
+              @if (i.shipTo.phone) { <div class="small">Mobile {{ i.shipTo.phone }}</div> }
+            </div>
+            <div>
+              <div class="label">Details</div>
+              @if (i.isNonGst) { <div><strong>Non-GST bill</strong></div> }
+              @else { <div>Place of supply: {{ i.shipTo.address.city || i.billTo.address.city || i.placeOfSupplyState }}</div> }
+              @if (i.businessSnapshot.address.city) { <div>Dispatched from: {{ i.businessSnapshot.address.city }}</div> }
+              <div>Time of sale: {{ i.createdAt | date: 'hh:mm a' }}</div>
+              @if (i.poDate) { <div>PO date: {{ i.poDate | date: 'dd-MM-yyyy' }}</div> }
+              @if (i.transport.vehicleNumber) { <div>Vehicle: {{ i.transport.vehicleNumber }}</div> }
+              @if (i.transport.ewayBillNumber) { <div>E-way bill: {{ i.transport.ewayBillNumber }}</div> }
+            </div>
+          </div>
+
+          <div class="table-scroll">
+            <table class="lines">
+              <thead>
+                <tr>
+                  <th>#</th><th>Item</th><th class="num">Qty</th><th class="num">Rate</th>
+                  @if (i.isNonGst) { <th class="num">Amount</th> }
+                  @else { <th class="num">Taxable</th><th class="num">{{ i.isInterState ? 'IGST' : 'CGST + SGST' }}</th><th class="num">Total</th> }
+                </tr>
+              </thead>
+              <tbody>
+                @for (l of i.lines; track $index) {
+                  <tr>
+                    <td class="muted">{{ $index + 1 }}</td>
+                    <td><strong>{{ l.name }}</strong> <span class="muted small">{{ l.sizeOrVariant }}</span></td>
+                    <td class="num">{{ l.quantity }} {{ l.unit }}</td>
+                    <td class="num">{{ l.rate | inr:false }}</td>
+                    @if (i.isNonGst) { <td class="num"><strong>{{ l.taxableValue | inr:false }}</strong></td> }
+                    @else {
+                      <td class="num">{{ l.taxableValue | inr:false }}</td>
+                      <td class="num">{{ l.cgst + l.sgst + l.igst | inr:false }} <span class="muted small">{{ l.gstRate }}%</span></td>
+                      <td class="num"><strong>{{ l.lineTotal | inr:false }}</strong></td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div class="sum">
+            <div class="row"><span>{{ i.isNonGst ? 'Total' : 'Taxable amount' }}</span><span class="num">{{ i.totals.taxableTotal | inr }}</span></div>
+            @if (!i.isNonGst) {
+              @if (i.isInterState) {
+                <div class="row"><span>IGST</span><span class="num">{{ i.totals.igstTotal | inr }}</span></div>
+              } @else {
+                <div class="row"><span>CGST</span><span class="num">{{ i.totals.cgstTotal | inr }}</span></div>
+                <div class="row"><span>SGST</span><span class="num">{{ i.totals.sgstTotal | inr }}</span></div>
+              }
+            }
+            @if (i.totals.roundOff !== 0) {
+              <div class="row muted"><span>Round off</span><span class="num">{{ i.totals.roundOff | inr:false }}</span></div>
+            }
+            <div class="row grand"><span>Grand total</span><span class="num">{{ i.totals.grandTotal | inr }}</span></div>
+            <div class="words">{{ i.amountInWords }}</div>
+          </div>
+          @if (i.notes) { <p class="small"><strong>Notes:</strong> {{ i.notes }}</p> }
+        </section>
+      </div>
+
+      <aside class="side">
+        <section class="panel">
+          <h2>PDF</h2>
+          <div class="copies">
+            <label class="check-row"><p-checkbox [(ngModel)]="copies.Original" [binary]="true" /> Original for recipient</label>
+            <label class="check-row"><p-checkbox [(ngModel)]="copies.Duplicate" [binary]="true" /> Duplicate for transporter</label>
+            <label class="check-row"><p-checkbox [(ngModel)]="copies.Triplicate" [binary]="true" /> Triplicate for supplier</label>
+          </div>
+          <div class="btns">
+            <button pButton type="button" label="Download PDF" icon="pi pi-download" [fluid]="true" (click)="download()"></button>
+            <button pButton type="button" label="Open to print" icon="pi pi-print" [outlined]="true" [fluid]="true" (click)="print()"></button>
+          </div>
+        </section>
+
+        @if (i.status !== 'Cancelled') {
+          <section class="panel">
+            <h2>Payments</h2>
+            <div class="row"><span>Bill amount</span><span class="num">{{ i.totals.grandTotal | inr }}</span></div>
+            <div class="row"><span>Received</span><span class="num">{{ i.amountPaid | inr }}</span></div>
+            <div class="row strong"><span>Balance</span><span class="num">{{ i.balanceDue | inr }}</span></div>
+            @for (p of i.payments; track p.id) {
+              <div class="payment">
+                <div>
+                  <strong>{{ p.amount | inr }}</strong> <span class="muted small">{{ p.mode }}</span>
+                  <div class="muted small">{{ p.date | date: 'dd-MM-yyyy' }}{{ p.reference ? ' · ' + p.reference : '' }}</div>
+                </div>
+                <div class="pay-actions">
+                  <button pButton type="button" icon="pi pi-file-pdf" [text]="true" size="small" pTooltip="Receipt (PDF)"
+                          (click)="receipt(p.id)" aria-label="Download receipt"></button>
+                  @if (auth.isOwner()) {
+                    <button pButton type="button" icon="pi pi-times" [text]="true" severity="danger" size="small"
+                            (click)="removePayment(p.id)" aria-label="Remove payment"></button>
+                  }
+                </div>
+              </div>
+            }
+            <button pButton type="button" label="Record payment" icon="pi pi-plus" [outlined]="true" [fluid]="true"
+                    class="mt" (click)="openPayment()" [disabled]="i.status === 'Draft'"></button>
+            @if (i.status === 'Draft') { <p class="muted small">Finalize the bill to record payments.</p> }
+          </section>
+
+          @if (auth.isOwner()) {
+          <section class="panel danger-zone">
+            <h2>Cancel bill</h2>
+            <p class="muted small">Cancelled bills keep their number and stay in your records, but drop out of sales and GST reports.</p>
+            <button pButton type="button" label="Cancel this bill" severity="danger" [outlined]="true" [fluid]="true"
+                    (click)="cancelReason = ''; cancelOpen.set(true)"></button>
+          </section>
+          }
+        }
+      </aside>
+    </div>
+
+    <p-dialog header="Record payment" [visible]="payOpen()" (visibleChange)="payOpen.set($event)" [modal]="true"
+              [style]="{ width: '440px' }" [breakpoints]="{ '480px': '96vw' }" [draggable]="false">
+      <div class="form-grid">
+        <div class="field">
+          <label for="pamt">Amount received</label>
+          <p-inputnumber inputId="pamt" [(ngModel)]="pay.amount" mode="currency" currency="INR" locale="en-IN" [min]="0" [fluid]="true" />
+        </div>
+        <div class="field">
+          <label for="pdate">Date</label>
+          <p-datepicker inputId="pdate" [(ngModel)]="pay.date" dateFormat="dd-mm-yy" [fluid]="true" appendTo="body" />
+        </div>
+        <div class="field">
+          <label for="pmode">Mode</label>
+          <p-select inputId="pmode" [options]="modes" [(ngModel)]="pay.mode" [fluid]="true" appendTo="body" />
+        </div>
+        <div class="field">
+          <label for="pref">Reference</label>
+          <input pInputText id="pref" [(ngModel)]="pay.reference" placeholder="UTR / cheque no." />
+        </div>
+        <div class="field span-all">
+          <label for="pnote">Note</label>
+          <input pInputText id="pnote" [(ngModel)]="pay.note" />
+        </div>
+      </div>
+      <ng-template #footer>
+        <button pButton type="button" label="Cancel" [text]="true" (click)="payOpen.set(false)"></button>
+        <button pButton type="button" label="Record payment" [loading]="busy()" [disabled]="!(pay.amount > 0)" (click)="savePayment()"></button>
+      </ng-template>
+    </p-dialog>
+
+    <p-dialog header="Cancel this bill?" [visible]="cancelOpen()" (visibleChange)="cancelOpen.set($event)" [modal]="true"
+              [style]="{ width: '440px' }" [breakpoints]="{ '480px': '96vw' }" [draggable]="false">
+      <p>{{ i.invoiceNumber }} will be marked as cancelled. This can’t be undone.</p>
+      <div class="field">
+        <label for="reason">Reason</label>
+        <textarea pTextarea id="reason" rows="3" [(ngModel)]="cancelReason" placeholder="e.g. Wrong client selected"></textarea>
+      </div>
+      <ng-template #footer>
+        <button pButton type="button" label="Keep bill" [text]="true" (click)="cancelOpen.set(false)"></button>
+        <button pButton type="button" label="Cancel bill" severity="danger" [loading]="busy()" (click)="confirmCancel()"></button>
+      </ng-template>
+    </p-dialog>
+  } @else {
+    <div class="panel empty">Loading bill…</div>
+  }
+</div>

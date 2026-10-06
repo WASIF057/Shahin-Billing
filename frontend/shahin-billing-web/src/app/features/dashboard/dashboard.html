@@ -1,0 +1,138 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>{{ greeting }}, {{ auth.user()?.name?.split(' ')?.[0] }}</h1>
+      <p>{{ subtitle() }}</p>
+    </div>
+    <div class="actions">
+      <a pButton routerLink="/bills/new" label="Create bill" icon="pi pi-plus"></a>
+    </div>
+  </div>
+
+  <section class="panel filters">
+    <div class="field">
+      <label for="dclient">Client</label>
+      <p-select inputId="dclient" [options]="clients()" optionLabel="name" optionValue="id" [(ngModel)]="clientId"
+                (onChange)="clientChanged()" [filter]="true" filterBy="name" placeholder="All clients" [showClear]="true"
+                [fluid]="true" appendTo="body" />
+    </div>
+    @if (cityOptions().length) {
+      <div class="field">
+        <label for="dcity">City</label>
+        <p-select inputId="dcity" [options]="cityOptions()" optionLabel="label" optionValue="value" [(ngModel)]="city"
+                  (onChange)="load()" [fluid]="true" appendTo="body" />
+      </div>
+    }
+    <div class="field">
+      <label for="dfrom">From</label>
+      <p-datepicker inputId="dfrom" [(ngModel)]="from" (ngModelChange)="load()" dateFormat="dd-mm-yy" [showClear]="true"
+                    placeholder="Any date" [fluid]="true" appendTo="body" />
+    </div>
+    <div class="field">
+      <label for="dto">To</label>
+      <p-datepicker inputId="dto" [(ngModel)]="to" (ngModelChange)="load()" dateFormat="dd-mm-yy" [showClear]="true"
+                    placeholder="Any date" [fluid]="true" appendTo="body" />
+    </div>
+    <button pButton type="button" label="Clear" icon="pi pi-filter-slash" [text]="true" [disabled]="!filtered" (click)="clear()"></button>
+  </section>
+
+  @if (data(); as d) {
+    <div class="figures">
+      <section class="figure lead">
+        <i class="icon pi pi-chart-line"></i>
+        <span class="label">Sales {{ d.customRange ? 'in ' + d.periodLabel : 'this month' }}</span>
+        <span class="value">{{ d.thisMonthSales | inr:true:0 }}</span>
+        <span class="sub">
+          @if (change() !== null) {
+            <span [class.up]="change()! >= 0" [class.down]="change()! < 0">{{ change()! >= 0 ? '▲' : '▼' }} {{ change()! < 0 ? -change()! : change() }}%</span>
+            vs {{ d.previousLabel }} ({{ d.lastMonthSales | inr:true:0 }})
+          } @else { {{ d.customRange ? 'Previous period' : 'Last month' }}: {{ d.lastMonthSales | inr:true:0 }} }
+          · {{ d.periodBills }} {{ d.periodBills === 1 ? 'bill' : 'bills' }}
+        </span>
+      </section>
+      <section class="figure">
+        <i class="icon pi pi-wallet"></i>
+        <span class="label">Waiting to be paid</span>
+        <span class="value">{{ d.unpaidAmount | inr:true:0 }}</span>
+        <span class="sub"><a routerLink="/bills">{{ d.unpaidBills }} {{ d.unpaidBills === 1 ? 'bill' : 'bills' }} unpaid or part paid</a></span>
+      </section>
+    </div>
+
+    <div class="pay-tiles">
+      <section class="tile paid">
+        <span class="t-label">Paid</span>
+        <span class="t-count">{{ d.payments.paid.bills }} {{ d.payments.paid.bills === 1 ? 'bill' : 'bills' }}</span>
+        <span class="t-amount">{{ d.payments.paid.total | inr:true:0 }}</span>
+        <span class="t-sub">Received {{ d.payments.paid.received | inr:true:0 }}</span>
+      </section>
+      <section class="tile part">
+        <span class="t-label">Part paid</span>
+        <span class="t-count">{{ d.payments.partPaid.bills }} {{ d.payments.partPaid.bills === 1 ? 'bill' : 'bills' }}</span>
+        <span class="t-amount">{{ d.payments.partPaid.total | inr:true:0 }}</span>
+        <span class="t-sub">Received {{ d.payments.partPaid.received | inr:true:0 }} · Due {{ d.payments.partPaid.balance | inr:true:0 }}</span>
+      </section>
+      <section class="tile unpaid">
+        <span class="t-label">Unpaid</span>
+        <span class="t-count">{{ d.payments.unpaid.bills }} {{ d.payments.unpaid.bills === 1 ? 'bill' : 'bills' }}</span>
+        <span class="t-amount">{{ d.payments.unpaid.total | inr:true:0 }}</span>
+        <span class="t-sub">Due {{ d.payments.unpaid.balance | inr:true:0 }}</span>
+      </section>
+    </div>
+
+    <div class="grid">
+      <section class="panel">
+        <h2>{{ d.customRange ? 'Monthly sales in this period' : 'Monthly sales' }}</h2>
+        <div class="chart"><p-chart type="bar" [data]="chartData()" [options]="chartOptions" height="260px" /></div>
+      </section>
+
+      <section class="panel">
+        <h2>{{ d.topGroupBy === 'city' ? 'Sales by city' : (d.customRange ? 'Top clients in this period' : 'Top clients this year') }}</h2>
+        @if (d.topClients.length) {
+          <ol class="top">
+            @for (c of d.topClients; track c.clientId) {
+              <li>
+                <span class="name">{{ c.name }}</span>
+                <span class="muted small">{{ c.bills }} {{ c.bills === 1 ? 'bill' : 'bills' }}</span>
+                <span class="num">{{ c.sales | inr:true:0 }}</span>
+              </li>
+            }
+          </ol>
+        } @else {
+          <p class="muted">Finalized bills will show up here.</p>
+        }
+      </section>
+    </div>
+
+    <section class="panel">
+      <div class="recent-head">
+        <h2>Recent bills</h2>
+        <a routerLink="/bills" class="small">See all bills</a>
+      </div>
+      @if (d.recentBills.length) {
+        <table class="recent">
+          @for (b of d.recentBills; track b.id) {
+            <tr>
+              <td><a [routerLink]="['/bills', b.id]" class="no">{{ b.invoiceNumber }}</a></td>
+              <td>{{ b.clientName }}</td>
+              <td class="muted">{{ b.invoiceDate | date: 'dd-MM-yyyy' }}</td>
+              <td class="num">{{ b.grandTotal | inr }}</td>
+              <td class="tag"><app-status-tag [status]="b.status" [payment]="b.paymentStatus" /></td>
+            </tr>
+          }
+        </table>
+      } @else {
+        <div class="empty">
+          <h3>No bills yet</h3>
+          <p>Set up your business, items and clients, then create your first bill.</p>
+          <div class="actions" style="justify-content: center">
+            <a pButton routerLink="/settings" label="Business details" [outlined]="true"></a>
+            <a pButton routerLink="/items" label="Add items" [outlined]="true"></a>
+            <a pButton routerLink="/clients" label="Add clients" [outlined]="true"></a>
+          </div>
+        </div>
+      }
+    </section>
+  } @else {
+    <div class="panel empty">Loading…</div>
+  }
+</div>

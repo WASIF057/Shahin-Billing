@@ -1,0 +1,60 @@
+<div class="shell" [class.menu-open]="menuOpen()">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="mark" aria-hidden="true"></span>
+      <div>
+        <div class="brand-name">{{ auth.user()?.businessName || 'Billing' }}</div>
+        <div class="brand-sub">{{ auth.isClient() ? 'Ordering' : 'GST billing' }}</div>
+      </div>
+    </div>
+
+    @if (auth.isClient()) {
+      <a class="new-bill" routerLink="/portal" (click)="menuOpen.set(false)"><i class="pi pi-shopping-cart"></i> Order products</a>
+    } @else {
+      <a class="new-bill" routerLink="/bills/new" (click)="menuOpen.set(false)"><i class="pi pi-plus"></i> Create bill</a>
+    }
+
+    <nav>
+      @for (l of links(); track l.path) {
+        <a [routerLink]="l.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: !!l.exact }"
+           (click)="menuOpen.set(false)">
+          <i [class]="l.icon"></i><span>{{ l.label }}</span>
+          @if (l.badge && badge.count() > 0) { <span class="badge">{{ badge.count() }}</span> }
+        </a>
+      }
+    </nav>
+
+    <div class="me">
+      <div class="me-name">{{ auth.user()?.name }}</div>
+      <div class="me-mail">{{ auth.user()?.email }}</div>
+      @if (!auth.isClient()) {
+        <div class="alertbar">
+          <button type="button" (click)="alerts.toggleSound()" [attr.aria-pressed]="alerts.soundOn()">
+            <i class="pi" [class.pi-volume-up]="alerts.soundOn()" [class.pi-volume-off]="!alerts.soundOn()"></i>
+            New-order sound: {{ alerts.soundOn() ? 'On' : 'Off' }}
+          </button>
+          <button type="button" (click)="alerts.testSound()">Test</button>
+          @if (alerts.desktop() === 'default') { <button type="button" (click)="alerts.enableDesktop()">Desktop alerts</button> }
+        </div>
+      }
+      <a class="acct" routerLink="/account" routerLinkActive="on" (click)="menuOpen.set(false)"><i class="pi pi-user"></i> My account</a>
+      <button pButton type="button" label="Log out" icon="pi pi-sign-out" [text]="true" size="small"
+              class="logout" (click)="auth.logout()"></button>
+    </div>
+  </aside>
+
+  <div class="scrim" (click)="menuOpen.set(false)"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button pButton type="button" icon="pi pi-bars" [text]="true" aria-label="Open menu"
+              (click)="menuOpen.set(true)"></button>
+      <span class="top-title">{{ auth.user()?.businessName }}</span>
+    </header>
+    <main>
+      <router-outlet />
+    </main>
+  </div>
+</div>
+
+@if (!auth.isClient()) { <app-order-alerts /> }

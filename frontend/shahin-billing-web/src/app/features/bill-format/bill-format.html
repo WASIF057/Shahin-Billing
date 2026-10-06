@@ -1,0 +1,104 @@
+<div class="page wide">
+  <div class="page-head">
+    <div>
+      <h1>{{ id() ? 'Edit bill format' : 'New bill format' }}</h1>
+      <p>Change how your PDF bills look. The preview uses your real business details with sample items.</p>
+    </div>
+    <div class="actions">
+      <a pButton routerLink="/bill-format" label="Back to formats" [text]="true" icon="pi pi-arrow-left"></a>
+      <button pButton type="button" label="Save format" icon="pi pi-check" [loading]="saving()" [disabled]="!t()" (click)="save()"></button>
+    </div>
+  </div>
+
+  @if (t(); as t) {
+    <div class="layout">
+      <div class="settings">
+        <section class="panel">
+          <div class="field">
+            <label for="fname">Format name</label>
+            <input pInputText id="fname" name="name" [(ngModel)]="name" placeholder="e.g. Modern blue" />
+            @if (errors()['name']) { <span class="error">{{ errors()['name'] }}</span> }
+            @if (isActive) { <span class="hint">This format is in use, so changes apply to new PDFs as soon as you save.</span> }
+          </div>
+          <h2>Look</h2>
+          <div class="field">
+            <label>Layout</label>
+            <p-selectbutton [options]="layouts" optionLabel="label" optionValue="value" [(ngModel)]="t.layout"
+                            (onChange)="changed()" [allowEmpty]="false" />
+          </div>
+          <div class="field">
+            <label>Text size</label>
+            <p-selectbutton [options]="sizes" optionLabel="label" optionValue="value" [(ngModel)]="t.fontSize"
+                            (onChange)="changed()" [allowEmpty]="false" />
+          </div>
+          <div class="field">
+            <label>Colour</label>
+            <div class="swatches">
+              @for (c of swatches; track c) {
+                <button type="button" class="swatch" [style.background]="c" [class.on]="t.primaryColor.toLowerCase() === c.toLowerCase()"
+                        (click)="setColor(t, c)" [attr.aria-label]="'Colour ' + c"></button>
+              }
+              <p-colorpicker [(ngModel)]="t.primaryColor" (onChange)="changed()" format="hex" appendTo="body" />
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Words on the bill</h2>
+          <div class="field">
+            <label for="title">Title</label>
+            <input pInputText id="title" [(ngModel)]="t.invoiceTitle" (ngModelChange)="changed()" maxlength="40" />
+          </div>
+          <div class="field">
+            <label for="ngtitle">Title for Non-GST bills</label>
+            <input pInputText id="ngtitle" [(ngModel)]="t.nonGstTitle" (ngModelChange)="changed()" maxlength="40" placeholder="BILL" />
+            <span class="hint">Used instead of the title above on bills made without GST. The preview shows a GST invoice.</span>
+          </div>
+          <div class="field">
+            <label for="foot">Footer note</label>
+            <input pInputText id="foot" [(ngModel)]="t.footerNote" (ngModelChange)="changed()" />
+          </div>
+          <p class="muted small">Terms and declaration are edited on <a routerLink="/settings">My business</a>.</p>
+        </section>
+
+        <section class="panel">
+          <h2>Show on the bill</h2>
+          <div class="toggles">
+            @for (tg of toggles; track tg.key) {
+              <label class="check-row">
+                <p-toggleswitch [(ngModel)]="t[tg.key]" (onChange)="changed()" />
+                <span>{{ tg.label }}</span>
+              </label>
+            }
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Copies to download by default</h2>
+          <div class="toggles">
+            @for (c of copyNames; track c) {
+              <label class="check-row">
+                <p-checkbox [binary]="true" [ngModel]="hasCopy(t, c)" (ngModelChange)="toggleCopy(t, c, $event)" />
+                <span>{{ c }}</span>
+              </label>
+            }
+          </div>
+        </section>
+      </div>
+
+      <div class="preview panel">
+        <div class="preview-head">
+          <h2>Preview</h2>
+          @if (previewLoading()) { <span class="muted small"><i class="pi pi-spin pi-spinner"></i> Updating…</span> }
+        </div>
+        @if (previewUrl()) {
+          <iframe [src]="previewUrl()" title="Bill preview"></iframe>
+        } @else {
+          <div class="empty">Preparing preview…</div>
+        }
+      </div>
+    </div>
+  } @else {
+    <div class="panel empty">Loading…</div>
+  }
+</div>

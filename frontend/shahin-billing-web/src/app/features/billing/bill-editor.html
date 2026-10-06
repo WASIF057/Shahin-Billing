@@ -1,0 +1,258 @@
+<div class="page wide">
+  <div class="page-head">
+    <div>
+      <h1>{{ existing() ? 'Edit bill' : 'New bill' }}</h1>
+      <p>{{ existing() ? existing()!.invoiceNumber + (existing()!.status === 'Draft' ? ' · draft' : '') : ('The bill number is given when you save.' + (orderRef() ? ' Made from order ' + orderRef()!.orderNumber + '.' : '')) }}</p>
+    </div>
+    <div class="actions">
+      <a pButton routerLink="/bills" label="Back to bills" [text]="true" icon="pi pi-arrow-left"></a>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="panel empty">Loading…</div>
+  } @else {
+  <div class="layout">
+    <div class="main-col">
+
+      <!-- Client + dates -->
+      <section class="panel">
+        <div class="form-grid three">
+          <div class="field span-2">
+            <label for="client">Client</label>
+            <p-select inputId="client" [options]="clients()" optionLabel="name" optionValue="id"
+                      [(ngModel)]="clientId" (onChange)="clientChanged()"
+                      [filter]="true" filterBy="name,gstin,cities" filterPlaceholder="Search by name, GSTIN or city"
+                      placeholder="Search and select a client" [fluid]="true" appendTo="body" [autofocus]="!existing()"
+                      emptyMessage="No clients yet. Add them on the Clients screen.">
+              <ng-template #item let-c>
+                <div class="opt">
+                  <span>{{ c.name }}</span>
+                  <span class="muted small">{{ c.cities?.join(', ') }}{{ c.gstin ? ' · ' + c.gstin : '' }}</span>
+                </div>
+              </ng-template>
+            </p-select>
+          </div>
+          <div class="field">
+            <label>Bill type</label>
+            <p-selectbutton [options]="billTypes" optionLabel="label" optionValue="value" [(ngModel)]="nonGst" name="billType"
+                            (onChange)="billTypeChanged()" [allowEmpty]="false" [disabled]="!!existing()" />
+            @if (existing()) { <span class="hint">Fixed once a bill is saved.</span> }
+            @else if (nonGst) { <span class="hint">No GST. Own number series, left out of GSTR-1.</span> }
+          </div>
+          <div class="field">
+            <label for="date">Bill date</label>
+            <p-datepicker inputId="date" [(ngModel)]="invoiceDate" (ngModelChange)="changed()" dateFormat="dd-mm-yy"
+                          [showIcon]="true" [fluid]="true" appendTo="body" />
+          </div>
+        </div>
+
+        @if (client(); as c) {
+          <div class="parties">
+            <div class="party">
+              <div class="party-title">Bill to</div>
+              <strong>{{ c.name }}</strong>
+              @if (cityOptions().length > 1) {
+                <div class="field" style="margin-top: 8px">
+                  <label for="city" class="small">City</label>
+                  <p-select inputId="city" [options]="cityOptions()" optionLabel="label" optionValue="value"
+                            [(ngModel)]="city" (onChange)="cityChanged()" [fluid]="true" appendTo="body" />
+                </div>
+              } @else {
+                <div>{{ billToCity() }}</div>
+              }
+              @if (c.phone) { <div class="small"><i class="pi pi-phone"></i> {{ c.phone }}</div> }
+            </div>
+            <div class="party">
+              <div class="party-title">
+                Ship to
+                <label class="check-row small same">
+                  <p-checkbox [(ngModel)]="shipToSame" (onChange)="shipToSameChanged()" [binary]="true" inputId="same" />
+                  <span>Same as bill to</span>
+                </label>
+              </div>
+              @if (shipToSame) {
+                <strong>{{ c.name }}</strong>
+                <div>{{ billToCity() }}</div>
+                @if (c.phone) { <div class="small"><i class="pi pi-phone"></i> {{ c.phone }}</div> }
+              } @else {
+                <strong>{{ c.name }}</strong>
+                <div class="ship-form">
+                  <p-select [options]="cityOptions()" optionLabel="label" optionValue="value" [(ngModel)]="shipTo.address.city"
+                            (onChange)="changed()" placeholder="Select city" [fluid]="true" appendTo="body" />
+                </div>
+                @if (c.phone) { <div class="small"><i class="pi pi-phone"></i> {{ c.phone }}</div> }
+              }
+            </div>
+          </div>
+
+          @if (!nonGst) {
+          <div class="pos">
+            <div class="field">
+              <label>Place of supply</label>
+              <div class="pos-city">{{ placeOfSupplyCity() || '—' }}</div>
+            </div>
+            <div class="field">
+              <label for="pos">State (decides GST)</label>
+              <p-select inputId="pos" [options]="states" optionLabel="name" optionValue="code" [(ngModel)]="placeOfSupply"
+                        (onChange)="changed()" [filter]="true" filterBy="name" [fluid]="true" appendTo="body" />
+            </div>
+            <p-tag [severity]="interState() ? 'warn' : 'info'" [rounded]="true"
+                   [value]="interState() ? 'Other state: IGST' : 'Same state: CGST + SGST'" />
+          </div>
+          }
+        }
+      </section>
+
+      <!-- Items -->
+      <section class="panel lines-panel">
+        <h2>Items</h2>
+        <div class="lines-scroll">
+          <table class="lines">
+            <thead>
+              <tr>
+                <th class="c-n">#</th>
+                <th class="c-item">Item</th>
+                <th class="c-qty num">Qty</th>
+                <th class="c-rate num">Rate</th>
+                @if (hasDiscount()) { <th class="c-disc num">Discount</th> }
+                <th class="c-amt num">Amount</th>
+                <th class="c-del"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of lines; track l.key; let i = $index) {
+                <tr>
+                  <td class="c-n muted">{{ i + 1 }}</td>
+                  <td class="c-item" [id]="'line-item-' + i">
+                    <p-select [options]="itemOptions()" optionLabel="label" optionValue="id" [(ngModel)]="l.itemId"
+                              (onChange)="itemChanged(l)" [filter]="true" filterBy="label"
+                              filterPlaceholder="Search items" placeholder="Search and select an item" [fluid]="true"
+                              appendTo="body" emptyMessage="No items yet. Add them on the Items screen." />
+                    @if (l.itemId) {
+                      <div class="line-meta">
+                        {{ l.unit }}
+                        @if (l.isSpecial) { <p-tag value="Client rate" severity="success" [rounded]="true" styleClass="mini-tag" /> }
+                      </div>
+                    }
+                  </td>
+                  <td class="c-qty">
+                    <p-inputnumber [(ngModel)]="l.quantity" (onInput)="l.quantity = $any($event).value ?? 0; changed()"
+                                   [min]="0" [maxFractionDigits]="3" [fluid]="true" inputStyleClass="num"
+                                   (keydown.enter)="qtyEnter(i, $event)" />
+                  </td>
+                  <td class="c-rate">
+                    <p-inputnumber [(ngModel)]="l.rate" (onInput)="l.rate = $any($event).value ?? 0; rateChanged(l)"
+                                   [min]="0" [minFractionDigits]="2" [maxFractionDigits]="2" locale="en-IN" [fluid]="true"
+                                   inputStyleClass="num" />
+                  </td>
+                  @if (hasDiscount()) {
+                    <td class="c-disc">
+                      <p-inputnumber [(ngModel)]="l.discount" (onInput)="l.discount = $any($event).value ?? 0; changed()"
+                                     [min]="0" [minFractionDigits]="2" [maxFractionDigits]="2" locale="en-IN" [fluid]="true"
+                                     inputStyleClass="num" />
+                    </td>
+                  }
+                  <td class="c-amt num strong">{{ lineCalc(i)?.taxableValue | inr:false }}</td>
+                  <td class="c-del">
+                    <button pButton type="button" icon="pi pi-trash" [text]="true" severity="danger" size="small"
+                            (click)="removeLine(i)" aria-label="Remove row"></button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <button pButton type="button" label="Add item" icon="pi pi-plus" [outlined]="true" size="small" (click)="addLine(true)"></button>
+        <span class="muted small tip">Tip: press Enter in the last quantity box to add another row.</span>
+      </section>
+
+      <!-- More details -->
+      <section class="panel">
+        <button type="button" class="disclosure" (click)="moreOpen.set(!moreOpen())" [attr.aria-expanded]="moreOpen()">
+          <i [class]="moreOpen() ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"></i>
+          More details <span class="muted small">PO date, transport, notes</span>
+        </button>
+        @if (moreOpen()) {
+          <div class="form-grid three more">
+            <div class="field">
+              <label for="podate">PO date</label>
+              <p-datepicker inputId="podate" [(ngModel)]="poDate" (ngModelChange)="changed()" dateFormat="dd-mm-yy"
+                            [showIcon]="true" [showClear]="true" [fluid]="true" appendTo="body" />
+            </div>
+            <div class="field">
+              <label for="tr">Transporter</label>
+              <input pInputText id="tr" [(ngModel)]="transport.transporterName" (ngModelChange)="changed()" />
+            </div>
+            <div class="field">
+              <label for="veh">Vehicle number</label>
+              <input pInputText id="veh" [ngModel]="transport.vehicleNumber" (ngModelChange)="transport.vehicleNumber = ($event || '').toUpperCase(); changed()"
+                     style="text-transform: uppercase" placeholder="KA20 AB 1234" autocapitalize="characters" />
+            </div>
+            <div class="field">
+              <label for="deliv">Delivery date</label>
+              <p-datepicker inputId="deliv" [(ngModel)]="deliveryDate" (ngModelChange)="changed()" dateFormat="dd-mm-yy"
+                            [showIcon]="true" [showClear]="true" [fluid]="true" appendTo="body" />
+            </div>
+            <div class="field span-all">
+              <label for="notes">Notes on the bill</label>
+              <textarea pTextarea id="notes" rows="2" [(ngModel)]="notes" (ngModelChange)="changed()"></textarea>
+            </div>
+          </div>
+        }
+      </section>
+    </div>
+
+    <!-- Totals (sticky) -->
+    <aside class="totals-col">
+      <div class="receipt">
+        <div class="receipt-head">
+          <span class="muted small">Bill</span>
+          <strong>{{ numberPreview() }}</strong>
+          @if (!existing()) { <span class="muted small">Final once the bill is saved</span> }
+        </div>
+        @let t = calc().totals;
+        <div class="row"><span>{{ nonGst ? 'Total' : 'Taxable amount' }}</span><span class="num">{{ t.taxableTotal | inr }}</span></div>
+        @if (!nonGst) {
+          @if (interState()) {
+            <div class="row"><span>IGST</span><span class="num">{{ t.igstTotal | inr }}</span></div>
+          } @else {
+            <div class="row"><span>CGST</span><span class="num">{{ t.cgstTotal | inr }}</span></div>
+            <div class="row"><span>SGST</span><span class="num">{{ t.sgstTotal | inr }}</span></div>
+          }
+        }
+        @if (t.roundOff !== 0) {
+          <div class="row muted"><span>Round off</span><span class="num">{{ t.roundOff > 0 ? '+' : '' }}{{ t.roundOff | inr:false }}</span></div>
+        }
+        <div class="grand">
+          <span>Grand total</span>
+          <span class="num">{{ t.grandTotal | inr }}</span>
+        </div>
+        <p class="words">{{ words() }}</p>
+
+        <div class="copies">
+          <span class="small strong">Copies to print</span>
+          <label class="check-row small"><p-checkbox [(ngModel)]="copies.Original" [binary]="true" /> Original for recipient</label>
+          <label class="check-row small"><p-checkbox [(ngModel)]="copies.Duplicate" [binary]="true" /> Duplicate for transporter</label>
+          <label class="check-row small"><p-checkbox [(ngModel)]="copies.Triplicate" [binary]="true" /> Triplicate for supplier</label>
+        </div>
+
+        <div class="save-actions">
+          <button pButton type="button" label="View bill" icon="pi pi-eye" [fluid]="true" severity="secondary" [outlined]="true"
+                  [loading]="previewing()" [disabled]="!!saving()" (click)="viewBill()"></button>
+          <button pButton type="button" label="Save & download PDF" icon="pi pi-download" [fluid]="true"
+                  [loading]="saving() === 'pdf'" [disabled]="!!saving()" (click)="save('pdf')"></button>
+          <button pButton type="button" label="Save & finalize" icon="pi pi-check" [fluid]="true" [outlined]="true"
+                  [loading]="saving() === 'final'" [disabled]="!!saving()" (click)="save('final')"></button>
+          @if (!existing() || existing()!.status === 'Draft') {
+            <button pButton type="button" label="Save draft" [text]="true" [fluid]="true"
+                    [loading]="saving() === 'draft'" [disabled]="!!saving()" (click)="save('draft')"></button>
+          }
+          <button pButton type="button" label="Cancel" icon="pi pi-times" [fluid]="true" severity="secondary" [text]="true"
+                  [disabled]="!!saving()" (click)="cancel()"></button>
+        </div>
+      </div>
+    </aside>
+  </div>
+  }
+</div>

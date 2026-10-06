@@ -1,0 +1,13 @@
+# Backend
+backend/**/bin/
+backend/**/obj/
+backend/**/appsettings.Development.json
+backend/**/appsettings.Local.json
+backend/**/backups/
+*.user
+.vs/
+# Frontend
+frontend/**/node_modules/
+frontend/**/dist/
+frontend/**/.angular/
+.DS_Store

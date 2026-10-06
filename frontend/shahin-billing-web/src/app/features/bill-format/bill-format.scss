@@ -1,0 +1,13 @@
+.page.wide { max-width: 1400px; }
+.layout { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 20px; align-items: start; }
+.settings .panel { display: flex; flex-direction: column; gap: 14px; }
+.settings .panel > h2 { margin-bottom: 0; }
+.swatches { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.swatch { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--line); cursor: pointer; }
+.swatch.on { box-shadow: 0 0 0 2px var(--ink); }
+.toggles { display: flex; flex-direction: column; gap: 10px; }
+.preview { position: sticky; top: 16px; padding: 14px; }
+.preview-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.preview-head h2 { margin: 0; }
+iframe { width: 100%; height: calc(100vh - 150px); min-height: 520px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: #fff; }
+@media (max-width: 1000px) { .layout { grid-template-columns: 1fr; } .preview { position: static; } }

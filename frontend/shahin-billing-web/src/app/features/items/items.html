@@ -1,0 +1,180 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>Items</h1>
+      <p>Your products with GST and rates. Give selected clients their own rate with “Special rates”.</p>
+    </div>
+    <div class="actions">
+      <button pButton type="button" label="Add item" icon="pi pi-plus" (click)="open()"></button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="toolbar">
+      <p-iconfield>
+        <p-inputicon styleClass="pi pi-search" />
+        <input pInputText type="text" placeholder="Search name, type or size" [ngModel]="search()" (ngModelChange)="search.set($event)" />
+      </p-iconfield>
+      <p-select [options]="typeFilterOptions()" optionLabel="label" optionValue="value" [ngModel]="typeFilter()"
+                (ngModelChange)="typeFilter.set($event)" appendTo="body" styleClass="type-filter" />
+      <label class="check-row small">
+        <p-toggleswitch [ngModel]="showInactive()" (ngModelChange)="showInactive.set($event)" /> Show hidden items
+      </label>
+      <button pButton type="button" label="Export to Excel" icon="pi pi-file-excel" severity="secondary" [outlined]="true"
+              [loading]="exporting()" (click)="exportItems()"></button>
+    </div>
+
+    <p-table [value]="filtered()" [loading]="loading()" dataKey="id" [rowHover]="true" responsiveLayout="scroll">
+      <ng-template #header>
+        <tr>
+          <th>Item</th><th>Type</th><th>Unit</th><th class="num">GST</th><th class="num">Default rate</th>
+          <th>Special rates</th><th></th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-i>
+        <tr [class.inactive]="!i.isActive">
+          <td>
+            <div class="item-name">{{ i.name }}</div>
+            @if (i.sizeOrVariant) { <div class="muted small">{{ i.sizeOrVariant }}</div> }
+          </td>
+          <td>@if (i.typeName) { <p-tag severity="secondary" [value]="i.typeName" [rounded]="true" /> } @else { <span class="muted small">—</span> }</td>
+          <td>{{ i.unit }}</td>
+          <td class="num">{{ i.gstRate }}%</td>
+          <td class="num">{{ i.defaultRate | inr }}</td>
+          <td>
+            @if (specialCount(i)) {
+              <p-tag severity="info" [value]="specialCount(i) + (specialCount(i) === 1 ? ' client' : ' clients')" [rounded]="true" />
+            } @else { <span class="muted small">None</span> }
+            @if (!i.isActive) { <p-tag severity="secondary" value="Hidden" [rounded]="true" class="ml" /> }
+          </td>
+          <td class="row-actions">
+            <button pButton type="button" icon="pi pi-pencil" [text]="true" pTooltip="Edit" (click)="open(i)" aria-label="Edit"></button>
+            <button pButton type="button" [icon]="i.isActive ? 'pi pi-eye-slash' : 'pi pi-eye'" [text]="true"
+                    [pTooltip]="i.isActive ? 'Hide from billing' : 'Show in billing'" (click)="toggleActive(i)" aria-label="Toggle"></button>
+            <button pButton type="button" icon="pi pi-trash" [text]="true" severity="danger" pTooltip="Delete" (click)="remove(i)" aria-label="Delete"></button>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr><td colspan="7">
+          <div class="empty">
+            <h3>No items yet</h3>
+            <p>Add your mattresses and pillows with their rates. You’ll pick them from a list while billing.</p>
+            <button pButton type="button" label="Add your first item" icon="pi pi-plus" (click)="open()"></button>
+          </div>
+        </td></tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<p-dialog [header]="editing().id ? 'Edit item' : 'Add item'" [visible]="dialogOpen()" (visibleChange)="dialogOpen.set($event)"
+          [modal]="true" [style]="{ width: '760px' }" [breakpoints]="{ '800px': '96vw' }" [draggable]="false">
+  @let it = editing();
+  <form (ngSubmit)="save()" id="itemForm">
+    <div class="form-grid">
+      <div class="field span-2">
+        <label for="itype">Type</label>
+        <p-select inputId="itype" name="type" [options]="types()" optionLabel="name" optionValue="id" [(ngModel)]="it.typeId"
+                  (onChange)="typeChanged(it)" [showClear]="true" placeholder="Select a type (Bed, Pillow...)"
+                  appendTo="body" [fluid]="true" />
+        @if (!types().length) {
+          <span class="hint">No types yet. <a routerLink="/catalog">Add types in Item setup</a>, or just type the details below.</span>
+        } @else {
+          <span class="hint">Pick a type to choose its variant and size from lists. Manage them in <a routerLink="/catalog">Item setup</a>.</span>
+        }
+      </div>
+
+      @if (typeOf(it); as t) {
+        @if (t.usesVariants) {
+          <div class="field">
+            <label for="ivar">Variant</label>
+            <p-select inputId="ivar" name="variant" [options]="opts(t.variants, it.variant)" [(ngModel)]="it.variant"
+                      [showClear]="true" placeholder="Select a variant" appendTo="body" [fluid]="true" />
+          </div>
+        }
+        @if (t.clothTypes.length) {
+          <div class="field">
+            <label for="icloth">Cloth</label>
+            <p-select inputId="icloth" name="cloth" [options]="opts(t.clothTypes, it.cloth)" [(ngModel)]="it.cloth" (onChange)="clothChanged(it)"
+                      [showClear]="true" placeholder="Select cloth" appendTo="body" [fluid]="true" />
+          </div>
+          @if (it.cloth && coloursFor(t, it.cloth).length) {
+            <div class="field">
+              <label for="icolour">Colour</label>
+              <p-select inputId="icolour" name="colour" [options]="opts(coloursFor(t, it.cloth), it.colour)" [(ngModel)]="it.colour"
+                        [showClear]="true" placeholder="Select colour" appendTo="body" [fluid]="true" />
+            </div>
+          }
+        }
+        <div class="field">
+          <label for="isize">Size</label>
+          <p-select inputId="isize" name="size" [options]="opts(t.sizes, it.size)" [(ngModel)]="it.size"
+                    [showClear]="true" placeholder="Select a size" appendTo="body" [fluid]="true" />
+        </div>
+      } @else {
+        <div class="field">
+          <label for="iname">Item name</label>
+          <input pInputText id="iname" name="name" [(ngModel)]="it.name" required placeholder="Orthopedic Mattress" />
+          @if (errors()['name']) { <span class="error">{{ errors()['name'] }}</span> }
+        </div>
+        <div class="field">
+          <label for="isize2">Size / variant</label>
+          <input pInputText id="isize2" name="size2" [(ngModel)]="it.sizeOrVariant" placeholder="72x36x6 in" />
+        </div>
+      }
+      <div class="field">
+        <label for="iunit">Unit</label>
+        <p-select inputId="iunit" name="unit" [options]="units" [(ngModel)]="it.unit" [editable]="true" appendTo="body" [fluid]="true" />
+      </div>
+      <div class="field">
+        <label for="igst">GST rate</label>
+        <p-select inputId="igst" name="gst" [options]="gstRates" optionLabel="label" optionValue="value"
+                  [(ngModel)]="it.gstRate" appendTo="body" [fluid]="true" />
+      </div>
+      <div class="field">
+        <label for="irate">Default rate (before GST)</label>
+        <p-inputnumber inputId="irate" name="rate" [(ngModel)]="it.defaultRate" mode="currency" currency="INR"
+                       locale="en-IN" [min]="0" [fluid]="true" />
+      </div>
+    </div>
+
+    <div class="special">
+      <div class="special-head">
+        <div>
+          <h3>Special rates</h3>
+          <p class="muted small">Only the clients you select here get a different rate. Everyone else gets the default rate.</p>
+        </div>
+        <button pButton type="button" label="Add special rate" icon="pi pi-plus" [outlined]="true" size="small"
+                (click)="addSpecialRate()" [disabled]="!clients().length"></button>
+      </div>
+      @if (!clients().length) {
+        <p class="muted small">Add clients first, then come back to give them special rates.</p>
+      }
+      @for (sr of it.specialRates; track $index; let i = $index) {
+        <div class="sr-row">
+          <div class="field sr-rate">
+            <label [for]="'sr' + i">Rate</label>
+            <p-inputnumber [inputId]="'sr' + i" [name]="'srRate' + i" [(ngModel)]="sr.rate" mode="currency" currency="INR"
+                           locale="en-IN" [min]="0" [fluid]="true" />
+          </div>
+          <div class="field sr-clients">
+            <label [for]="'sc' + i">For these clients</label>
+            <p-multiselect [inputId]="'sc' + i" [name]="'srClients' + i" [options]="rowOptions()[i] ?? []"
+                           optionLabel="name" optionValue="id" optionDisabled="disabled"
+                           [(ngModel)]="sr.clientIds" (onChange)="refreshRowOptions()"
+                           [filter]="true" filterPlaceHolder="Search clients" placeholder="Select clients"
+                           display="chip" appendTo="body" [fluid]="true" [showToggleAll]="false" />
+          </div>
+          <button pButton type="button" icon="pi pi-trash" [text]="true" severity="danger" class="sr-del"
+                  (click)="removeSpecialRate(i)" aria-label="Remove special rate"></button>
+        </div>
+      }
+    </div>
+  </form>
+
+  <ng-template #footer>
+    <button pButton type="button" label="Cancel" [text]="true" (click)="dialogOpen.set(false)"></button>
+    <button pButton type="submit" form="itemForm" [label]="it.id ? 'Save item' : 'Add item'" icon="pi pi-check" [loading]="saving()"></button>
+  </ng-template>
+</p-dialog>

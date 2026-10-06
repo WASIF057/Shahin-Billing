@@ -1,0 +1,210 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>Clients</h1>
+      <p>The businesses you sell to. Their GSTIN and address fill in automatically on every bill.</p>
+    </div>
+    <div class="actions">
+      <button pButton type="button" label="Add client" icon="pi pi-plus" (click)="open()"></button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="toolbar">
+      <p-iconfield>
+        <p-inputicon styleClass="pi pi-search" />
+        <input pInputText type="text" placeholder="Search name, GSTIN or city" [ngModel]="search()" (ngModelChange)="search.set($event)" />
+      </p-iconfield>
+      <label class="check-row small">
+        <p-toggleswitch [ngModel]="showInactive()" (ngModelChange)="showInactive.set($event)" /> Show hidden clients
+      </label>
+    </div>
+
+    <p-table [value]="filtered()" [loading]="loading()" dataKey="id" [rowHover]="true">
+      <ng-template #header>
+        <tr><th>Client</th><th>GSTIN</th><th>City</th><th>State</th><th></th></tr>
+      </ng-template>
+      <ng-template #body let-c>
+        <tr [class.inactive]="!c.isActive">
+          <td>
+            <div class="name">{{ c.name }}</div>
+            @if (c.phone) { <div class="muted small">{{ c.phone }}</div> }
+          </td>
+          <td>{{ c.gstin || '—' }}</td>
+          <td>
+            {{ c.cities?.length ? c.cities.join(', ') : (c.billingAddress.city || '—') }}
+          </td>
+          <td>{{ c.billingAddress.state }}</td>
+          <td class="row-actions">
+            @if (!c.isActive) { <p-tag severity="secondary" value="Hidden" [rounded]="true" /> }
+            <button pButton type="button" icon="pi pi-pencil" [text]="true" pTooltip="Edit" (click)="open(c)" aria-label="Edit"></button>
+            @if (auth.isOwner()) {
+              <button pButton type="button" icon="pi pi-shopping-cart" [text]="true" pTooltip="Ordering login" (click)="openPortal(c)" aria-label="Ordering login"></button>
+              <button pButton type="button" [icon]="c.isActive ? 'pi pi-eye-slash' : 'pi pi-eye'" [text]="true"
+                      [pTooltip]="c.isActive ? 'Hide from billing' : 'Show in billing'" (click)="toggleActive(c)" aria-label="Toggle"></button>
+              <button pButton type="button" icon="pi pi-trash" [text]="true" severity="danger" pTooltip="Delete" (click)="remove(c)" aria-label="Delete"></button>
+            }
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr><td colspan="5">
+          <div class="empty">
+            <h3>No clients yet</h3>
+            <p>Add the businesses you bill. You’ll pick them from a searchable list when making a bill.</p>
+            <button pButton type="button" label="Add your first client" icon="pi pi-plus" (click)="open()"></button>
+          </div>
+        </td></tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<p-dialog [header]="editing().id ? 'Edit client' : 'Add client'" [visible]="dialogOpen()" (visibleChange)="dialogOpen.set($event)"
+          [modal]="true" [style]="{ width: '780px' }" [breakpoints]="{ '820px': '96vw' }" [draggable]="false">
+  @let c = editing();
+  <form (ngSubmit)="save()" (keydown.enter)="keepOpenOnEnter($event)" id="clientForm">
+    <div class="form-grid">
+      <div class="field span-2">
+        <label for="cname">Client / business name</label>
+        <input pInputText id="cname" name="name" [(ngModel)]="c.name" required />
+        @if (errors()['name']) { <span class="error">{{ errors()['name'] }}</span> }
+      </div>
+      <div class="field">
+        <label for="cgstin">GSTIN</label>
+        <input pInputText id="cgstin" name="gstin" [(ngModel)]="c.gstin" (ngModelChange)="gstinChanged(c)" maxlength="15" />
+        @if (gstinInvalid(c) || errors()['gstin']) { <span class="error">This GSTIN doesn’t look right. Check each character.</span> }
+        @else { <span class="hint">State fills in automatically.</span> }
+      </div>
+      <div class="field">
+        <label for="cpan">PAN</label>
+        <input pInputText id="cpan" name="pan" [(ngModel)]="c.pan" maxlength="10" />
+      </div>
+      <div class="field">
+        <label for="cphone">Mobile number</label>
+        <input pInputText id="cphone" name="phone" [(ngModel)]="c.phone" maxlength="15" inputmode="tel" />
+        @if (errors()['phone']) { <span class="error">{{ errors()['phone'] }}</span> }
+      </div>
+      <div class="field">
+        <label for="cemail">Email</label>
+        <input pInputText id="cemail" name="email" type="email" [(ngModel)]="c.email" />
+        @if (errors()['email']) { <span class="error">{{ errors()['email'] }}</span> }
+      </div>
+    </div>
+
+    <h3 class="section-title">Location</h3>
+    <div class="form-grid">
+      <div class="field span-2">
+        <label for="bstate">State</label>
+        <p-select inputId="bstate" name="bstate" [options]="states" optionLabel="name" optionValue="code"
+                  [(ngModel)]="c.billingAddress.stateCode" [filter]="true" filterBy="name,code" placeholder="Select state"
+                  appendTo="body" [fluid]="true" />
+        @if (errors()['billingAddress.stateCode']) { <span class="error">{{ errors()['billingAddress.stateCode'] }}</span> }
+      </div>
+    </div>
+
+    <div class="field" style="margin-top: 16px">
+      <label for="city">Cities</label>
+      <!-- multiple + no typeahead = a box where each typed city (Enter) becomes a removable chip -->
+      <p-autocomplete inputId="city" name="cities" [(ngModel)]="c.cities" [multiple]="true" [typeahead]="false"
+                      [addOnBlur]="true" placeholder="Type a city and press Enter" [fluid]="true" />
+      <span class="hint">Add every city this client has a store in. You pick one on each bill.</span>
+    </div>
+
+    <label class="check-row" style="margin-top: 16px">
+      <p-checkbox inputId="nogst" name="nogst" [(ngModel)]="c.billedWithoutGst" [binary]="true" />
+      <span>Usually billed without GST (new bills for this client start as Non-GST)</span>
+    </label>
+
+    <label class="check-row" style="margin-top: 16px">
+      <p-checkbox inputId="same" name="same" [(ngModel)]="c.shippingSameAsBilling" [binary]="true" />
+      <span>Shipping address is the same as billing</span>
+    </label>
+
+    @if (!c.shippingSameAsBilling) {
+      <h3 class="section-title">Shipping address</h3>
+      <div class="form-grid">
+        <div class="field span-2">
+          <label for="s1">Address line 1</label>
+          <input pInputText id="s1" name="s1" [(ngModel)]="c.shippingAddress.line1" />
+        </div>
+        <div class="field span-2">
+          <label for="s2">Address line 2</label>
+          <input pInputText id="s2" name="s2" [(ngModel)]="c.shippingAddress.line2" />
+        </div>
+        <div class="field">
+          <label for="scity">City</label>
+          <input pInputText id="scity" name="scity" [(ngModel)]="c.shippingAddress.city" />
+        </div>
+        <div class="field">
+          <label for="spin">Pincode</label>
+          <input pInputText id="spin" name="spin" [(ngModel)]="c.shippingAddress.pincode" maxlength="6" />
+        </div>
+        <div class="field span-2">
+          <label for="sstate">State</label>
+          <p-select inputId="sstate" name="sstate" [options]="states" optionLabel="name" optionValue="code"
+                    [(ngModel)]="c.shippingAddress.stateCode" [filter]="true" filterBy="name,code" placeholder="Select state"
+                    appendTo="body" [fluid]="true" />
+        </div>
+      </div>
+    }
+
+    <div class="field" style="margin-top: 16px">
+      <label for="cnotes">Notes</label>
+      <textarea pTextarea id="cnotes" name="notes" rows="2" [(ngModel)]="c.notes"></textarea>
+    </div>
+
+    @if (c.id) {
+      <h3 class="section-title">Special rates for this client</h3>
+      @if (specialRates().length) {
+        <table class="rates">
+          <tr><th>Item</th><th class="num">Default</th><th class="num">This client</th></tr>
+          @for (r of specialRates(); track r.itemId) {
+            <tr>
+              <td>{{ r.itemName }} <span class="muted small">{{ r.sizeOrVariant }}</span></td>
+              <td class="num muted">{{ r.defaultRate | inr }}</td>
+              <td class="num"><strong>{{ r.specialRate | inr }}</strong></td>
+            </tr>
+          }
+        </table>
+        <p class="muted small">Change these from the Items screen.</p>
+      } @else {
+        <p class="muted small">This client gets default rates on every item. Set special rates from the Items screen.</p>
+      }
+    }
+  </form>
+
+  <ng-template #footer>
+    <button pButton type="button" label="Cancel" [text]="true" (click)="dialogOpen.set(false)"></button>
+    <button pButton type="submit" form="clientForm" [label]="c.id ? 'Save client' : 'Add client'" icon="pi pi-check" [loading]="saving()"></button>
+  </ng-template>
+</p-dialog>
+
+<p-dialog header="Ordering login" [visible]="portalOpen()" (visibleChange)="portalOpen.set($event)" [modal]="true"
+          [style]="{ width: '480px' }" [breakpoints]="{ '540px': '96vw' }" [draggable]="false">
+  @if (portalClient(); as c) {
+    <p class="muted small" style="margin-top: 0">
+      Lets <strong>{{ c.name }}</strong> log in to your website and order your products. They see product names only, never prices or bills.
+    </p>
+    @if (!portal()) { <p class="muted">Loading…</p> }
+    @else if (!portal()!.exists) {
+      @if (c.email) {
+        <p>An invitation will be emailed to <strong>{{ c.email }}</strong>. They choose their own password with <em>Forgot password?</em>, so you never share one.</p>
+        <button pButton type="button" label="Create login and email the invitation" icon="pi pi-send" [loading]="portalBusy()" (click)="createPortal()"></button>
+      } @else {
+        <p>This client has no email address yet. Close this, choose <strong>Edit</strong> on the client, add their email, then come back.</p>
+      }
+    } @else {
+      <div class="portal-row"><span class="muted">Login email</span><strong>{{ portal()!.email }}</strong></div>
+      <div class="portal-row"><span class="muted">Status</span>
+        <p-tag [severity]="portal()!.isActive ? 'success' : 'secondary'" [value]="portal()!.isActive ? 'On' : 'Switched off'" [rounded]="true" /></div>
+      @if (portal()!.warning) { <p class="small" style="color: var(--warn)">{{ portal()!.warning }}</p> }
+      <div class="portal-actions">
+        <button pButton type="button" label="Resend invitation" icon="pi pi-send" [outlined]="true" size="small" [loading]="portalBusy()" (click)="invitePortal()"></button>
+        <button pButton type="button" [label]="portal()!.isActive ? 'Switch off' : 'Switch on'" [outlined]="true" size="small" severity="secondary" (click)="togglePortal()"></button>
+        <button pButton type="button" label="Remove login" icon="pi pi-trash" [outlined]="true" size="small" severity="danger" (click)="removePortal()"></button>
+      </div>
+    }
+  }
+  <ng-template #footer><button pButton type="button" label="Close" [text]="true" (click)="portalOpen.set(false)"></button></ng-template>
+</p-dialog>

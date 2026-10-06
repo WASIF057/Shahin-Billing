@@ -1,0 +1,223 @@
+<div class="page">
+  <div class="page-head">
+    <div>
+      <h1>My business</h1>
+      <p>These details print on every bill. Old bills keep the details they were made with.</p>
+    </div>
+    <div class="actions">
+      <button pButton type="button" label="Save changes" icon="pi pi-check" [loading]="saving()" (click)="save()"></button>
+    </div>
+  </div>
+
+  @if (welcome) {
+    <p-message severity="info" styleClass="mb" [style]="{ 'margin-bottom': '16px' }"
+               text="Welcome! Start by filling in your business details and GSTIN, then add your items and clients." />
+  }
+
+  @if (biz(); as b) {
+    <form (ngSubmit)="save()" (input)="tick.set(tick() + 1)">
+      <section class="panel">
+        <h2>Business</h2>
+        <div class="form-grid">
+          <div class="field">
+            <label for="name">Business name</label>
+            <input pInputText id="name" name="name" [(ngModel)]="b.name" required />
+            @if (errors()['name']) { <span class="error">{{ errors()['name'] }}</span> }
+          </div>
+          <div class="field">
+            <label for="sig-name">Authorised signatory name</label>
+            <input pInputText id="sig-name" name="sigName" [(ngModel)]="b.authorisedSignatoryName" placeholder="e.g. Proprietor" />
+          </div>
+          <div class="field">
+            <label for="gstin">GSTIN</label>
+            <input pInputText id="gstin" name="gstin" [(ngModel)]="b.gstin" (ngModelChange)="gstinChanged(b)" maxlength="15"
+                   [class.ng-invalid]="gstinInvalid(b)" [class.ng-dirty]="gstinInvalid(b)" />
+            @if (gstinInvalid(b)) { <span class="error">This GSTIN doesn’t look right. Check each character.</span> }
+            @else { <span class="hint">Your state fills in automatically from the GSTIN.</span> }
+          </div>
+          <div class="field">
+            <label for="pan">PAN</label>
+            <input pInputText id="pan" name="pan" [(ngModel)]="b.pan" maxlength="10" />
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Address and contact</h2>
+        <div class="form-grid">
+          <div class="field span-2">
+            <label for="l1">Address line 1</label>
+            <input pInputText id="l1" name="l1" [(ngModel)]="b.address.line1" />
+          </div>
+          <div class="field span-2">
+            <label for="l2">Address line 2</label>
+            <input pInputText id="l2" name="l2" [(ngModel)]="b.address.line2" />
+          </div>
+          <div class="field">
+            <label for="city">City</label>
+            <input pInputText id="city" name="city" [(ngModel)]="b.address.city" />
+          </div>
+          <div class="field">
+            <label for="pin">Pincode</label>
+            <input pInputText id="pin" name="pin" [(ngModel)]="b.address.pincode" maxlength="6" />
+          </div>
+          <div class="field">
+            <label for="state">State</label>
+            <p-select inputId="state" name="state" [options]="states" optionLabel="name" optionValue="code"
+                      [(ngModel)]="b.address.stateCode" [filter]="true" filterBy="name,code" placeholder="Select state"
+                      appendTo="body" [fluid]="true" />
+            <span class="hint">Decides CGST + SGST (same state) or IGST (other state).</span>
+          </div>
+          <div class="field">
+            <label for="phone">Phone</label>
+            <input pInputText id="phone" name="phone" [(ngModel)]="b.phone" />
+          </div>
+          <div class="field">
+            <label for="phone2">Alternate phone</label>
+            <input pInputText id="phone2" name="phone2" [(ngModel)]="b.alternatePhone" />
+          </div>
+          <div class="field">
+            <label for="email">Email</label>
+            <input pInputText id="email" name="email" type="email" [(ngModel)]="b.email" />
+            @if (errors()['email']) { <span class="error">{{ errors()['email'] }}</span> }
+          </div>
+          <div class="field">
+            <label for="web">Website</label>
+            <input pInputText id="web" name="web" [(ngModel)]="b.website" />
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Bank details for payment</h2>
+        <div class="form-grid three">
+          <div class="field">
+            <label for="accName">Account name</label>
+            <input pInputText id="accName" name="accName" [(ngModel)]="b.bank.accountName" />
+          </div>
+          <div class="field">
+            <label for="accNo">Account number</label>
+            <input pInputText id="accNo" name="accNo" [(ngModel)]="b.bank.accountNumber" />
+          </div>
+          <div class="field">
+            <label for="ifsc">IFSC</label>
+            <input pInputText id="ifsc" name="ifsc" [(ngModel)]="b.bank.ifsc" maxlength="11" />
+            @if (errors()['bank.ifsc']) { <span class="error">{{ errors()['bank.ifsc'] }}</span> }
+          </div>
+          <div class="field">
+            <label for="bank">Bank name</label>
+            <input pInputText id="bank" name="bank" [(ngModel)]="b.bank.bankName" />
+          </div>
+          <div class="field">
+            <label for="branch">Branch</label>
+            <input pInputText id="branch" name="branch" [(ngModel)]="b.bank.branch" />
+          </div>
+          <div class="field">
+            <label for="upi">UPI ID</label>
+            <input pInputText id="upi" name="upi" [(ngModel)]="b.bank.upiId" placeholder="name@bank" />
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Logo and signature</h2>
+        <div class="form-grid">
+          <div class="field">
+            <label>Logo</label>
+            <app-image-picker label="Logo" [maxKb]="500" [(value)]="b.logo" (tooLarge)="notify.warn($event)" />
+          </div>
+          <div class="field">
+            <label>Signature</label>
+            <app-image-picker label="Signature" [maxKb]="300" [(value)]="b.signature" (tooLarge)="notify.warn($event)" />
+            <span class="hint">Sign on white paper, take a photo, and upload it. PNG with a transparent background looks best.</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Bill numbering</h2>
+        <div class="form-grid three">
+          <div class="field">
+            <label for="prefix">Prefix</label>
+            <input pInputText id="prefix" name="prefix" [(ngModel)]="b.invoiceNumbering.prefix" maxlength="10" />
+          </div>
+          <div class="field">
+            <label for="sep">Separator</label>
+            <input pInputText id="sep" name="sep" [(ngModel)]="b.invoiceNumbering.separator" maxlength="2" />
+          </div>
+          <div class="field">
+            <label for="pad">Digits</label>
+            <p-inputnumber inputId="pad" name="pad" [(ngModel)]="b.invoiceNumbering.padding" [min]="1" [max]="8"
+                           [showButtons]="true" (onInput)="tick.set(tick() + 1)" [fluid]="true" />
+          </div>
+          <div class="field">
+            <label for="ngprefix">Non-GST bill prefix</label>
+            <input pInputText id="ngprefix" name="ngprefix" [(ngModel)]="b.invoiceNumbering.nonGstPrefix" maxlength="10" />
+          </div>
+          <div class="field span-all">
+            <span class="hint">
+              Next GST invoice will look like <strong>{{ numberExample() }}</strong>, and the next Non-GST bill <strong>{{ nonGstExample() }}</strong>.
+              Each series keeps counting up and never restarts. Use a different prefix for each.
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Security</h2>
+        <label class="check-row">
+          <p-toggleswitch [(ngModel)]="b.requireLoginOtp" name="otp" />
+          <span>Ask for an emailed code when logging in</span>
+        </label>
+        <p class="muted small" style="margin: 8px 0 0">
+          After the password, a 6-digit code is emailed to your business email above (or your account email if that is empty).
+          It only applies while email is connected on the Email templates screen. You can also sign in with Google if it has been set up.
+        </p>
+      </section>
+
+      <section class="panel">
+        <h2>Terms and declaration</h2>
+        <div class="form-grid">
+          <div class="field">
+            <label for="terms">Terms and conditions</label>
+            <textarea pTextarea id="terms" name="terms" rows="5" [(ngModel)]="b.termsAndConditions"></textarea>
+          </div>
+          <div class="field">
+            <label for="decl">Declaration</label>
+            <textarea pTextarea id="decl" name="decl" rows="5" [(ngModel)]="b.declarationText"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <div class="actions" style="justify-content: flex-end; margin-top: 16px">
+        <button pButton type="submit" label="Save changes" icon="pi pi-check" [loading]="saving()"></button>
+      </div>
+    </form>
+
+    <section class="panel" style="margin-top: 32px">
+      <h2>Change password</h2>
+      <div class="form-grid three">
+        <div class="field">
+          <label for="cur">Current password</label>
+          <p-password inputId="cur" [(ngModel)]="pw.current" [feedback]="false" [toggleMask]="true" [fluid]="true" />
+        </div>
+        <div class="field">
+          <label for="new">New password</label>
+          <p-password inputId="new" [(ngModel)]="pw.next" [feedback]="false" [toggleMask]="true" [fluid]="true" />
+        </div>
+        <div class="field" style="justify-content: flex-end">
+          <button pButton type="button" label="Change password" [outlined]="true"
+                  [disabled]="!pw.current || pw.next.length < 8" (click)="changePassword()"></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Try it with demo data</h2>
+      <p class="muted">Adds 5 sample items and 4 sample clients (one in Karnataka, to see IGST). Works only while the API runs in Development mode and only when you have no items yet.</p>
+      <button pButton type="button" label="Add demo data" icon="pi pi-database" [outlined]="true" (click)="seed()"></button>
+    </section>
+  } @else {
+    <div class="panel empty">Loading your business details…</div>
+  }
+</div>

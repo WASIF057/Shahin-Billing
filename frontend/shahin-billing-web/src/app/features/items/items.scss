@@ -1,0 +1,14 @@
+.toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.toolbar .check-row { margin-left: auto; }
+:host ::ng-deep .type-filter { min-width: 180px; }
+.item-name { font-weight: 600; }
+tr.inactive td { opacity: 0.6; }
+.row-actions { text-align: right; white-space: nowrap; }
+.ml { margin-left: 6px; }
+.special { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line); }
+.special-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+.special-head p { margin: 2px 0 0; }
+.sr-row { display: grid; grid-template-columns: 170px 1fr 40px; gap: 12px; align-items: end; margin-bottom: 10px;
+          background: var(--navy-soft); border-radius: var(--radius-sm); padding: 10px 10px 10px 12px; }
+.sr-del { align-self: end; }
+@media (max-width: 640px) { .sr-row { grid-template-columns: 1fr; } }
