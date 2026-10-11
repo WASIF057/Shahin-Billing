@@ -13,6 +13,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { TeamApi } from '../../core/api.service';
 import { fieldErrors } from '../../core/errors';
 import { TeamMember } from '../../core/models';
+import { Confirmer } from '../../core/confirmer.service';
 import { Notify } from '../../core/notify.service';
 
 /** Team: the owner adds staff logins. Staff can bill and take payments, but not change settings or see reports. */
@@ -70,7 +71,7 @@ import { Notify } from '../../core/notify.service';
 
     <p-dialog header="Add staff member" [visible]="addOpen()" (visibleChange)="addOpen.set($event)" [modal]="true"
               [style]="{ width: '460px' }" [breakpoints]="{ '520px': '96vw' }" [draggable]="false">
-      <form (ngSubmit)="save()" id="staffForm" class="form">
+      <form (ngSubmit)="askSave()" id="staffForm" class="form">
         <div class="field">
           <label for="sname">Name</label>
           <input pInputText id="sname" name="name" [(ngModel)]="form.name" required />
@@ -90,7 +91,7 @@ import { Notify } from '../../core/notify.service';
         </div>
       </form>
       <ng-template #footer>
-        <button pButton type="button" label="Cancel" [text]="true" (click)="addOpen.set(false)"></button>
+        <button pButton type="button" label="Cancel" [text]="true" (click)="confirmer.discard(() => addOpen.set(false))"></button>
         <button pButton type="submit" form="staffForm" label="Add staff member" icon="pi pi-check" [loading]="saving()"></button>
       </ng-template>
     </p-dialog>
@@ -103,8 +104,8 @@ import { Notify } from '../../core/notify.service';
         <span class="hint">At least 8 characters. Their open sessions end, so they log in again with this.</span>
       </div>
       <ng-template #footer>
-        <button pButton type="button" label="Cancel" [text]="true" (click)="resetOpen.set(false)"></button>
-        <button pButton type="button" label="Set password" icon="pi pi-check" [disabled]="newPassword.length < 8" (click)="reset()"></button>
+        <button pButton type="button" label="Cancel" [text]="true" (click)="confirmer.discard(() => resetOpen.set(false))"></button>
+        <button pButton type="button" label="Set password" icon="pi pi-check" [disabled]="newPassword.length < 8" (click)="askReset()"></button>
       </ng-template>
     </p-dialog>
   `,
@@ -119,6 +120,7 @@ import { Notify } from '../../core/notify.service';
 export class TeamPage implements OnInit {
   private api = inject(TeamApi);
   private notify = inject(Notify);
+  confirmer = inject(Confirmer);
   private confirm = inject(ConfirmationService);
 
   members = signal<TeamMember[]>([]);
@@ -144,6 +146,8 @@ export class TeamPage implements OnInit {
 
   open() { this.form = { name: '', email: '', password: '' }; this.errors.set({}); this.addOpen.set(true); }
 
+  askSave() { this.confirmer.save('this staff member', () => this.save()); }
+
   save() {
     this.saving.set(true);
     this.errors.set({});
@@ -161,6 +165,8 @@ export class TeamPage implements OnInit {
   }
 
   openReset(m: TeamMember) { this.resetting.set(m); this.newPassword = ''; this.resetOpen.set(true); }
+
+  askReset() { this.confirmer.ask('Set a new password?', 'The staff member will be logged out everywhere and must use the new password.', 'Yes, set password', () => this.reset()); }
 
   reset() {
     const m = this.resetting();

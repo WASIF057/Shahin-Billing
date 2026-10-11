@@ -134,7 +134,7 @@ import { Notify } from '../../core/notify.service';
       .row { flex-direction: column; align-items: stretch; gap: 8px; }
       .qty { width: 100%; }
       .basket { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; align-items: center; justify-content: space-between; gap: 12px;
-                padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); background: #fff; border-top: 1px solid var(--line); box-shadow: 0 -8px 24px rgba(15, 25, 50, 0.12); }
+                padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -8px 24px rgba(15, 25, 50, 0.12); }
       :host { display: block; padding-bottom: 70px; }
     }
   `,

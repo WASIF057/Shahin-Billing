@@ -63,7 +63,7 @@
 <p-dialog [header]="editing().id ? 'Edit client' : 'Add client'" [visible]="dialogOpen()" (visibleChange)="dialogOpen.set($event)"
           [modal]="true" [style]="{ width: '780px' }" [breakpoints]="{ '820px': '96vw' }" [draggable]="false">
   @let c = editing();
-  <form (ngSubmit)="save()" (keydown.enter)="keepOpenOnEnter($event)" id="clientForm">
+  <form (ngSubmit)="askSave()" (keydown.enter)="keepOpenOnEnter($event)" id="clientForm">
     <div class="form-grid">
       <div class="field span-2">
         <label for="cname">Client / business name</label>
@@ -175,7 +175,7 @@
   </form>
 
   <ng-template #footer>
-    <button pButton type="button" label="Cancel" [text]="true" (click)="dialogOpen.set(false)"></button>
+    <button pButton type="button" label="Cancel" [text]="true" (click)="confirmer.discard(() => dialogOpen.set(false))"></button>
     <button pButton type="submit" form="clientForm" [label]="c.id ? 'Save client' : 'Add client'" icon="pi pi-check" [loading]="saving()"></button>
   </ng-template>
 </p-dialog>

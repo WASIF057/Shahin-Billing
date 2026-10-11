@@ -6,7 +6,7 @@
     </div>
     <div class="actions">
       <a pButton routerLink="/bill-format" label="Back to formats" [text]="true" icon="pi pi-arrow-left"></a>
-      <button pButton type="button" label="Save format" icon="pi pi-check" [loading]="saving()" [disabled]="!t()" (click)="save()"></button>
+      <button pButton type="button" label="Save format" icon="pi pi-check" [loading]="saving()" [disabled]="!t()" (click)="askSave()"></button>
     </div>
   </div>
 

@@ -25,6 +25,8 @@ export class BusinessApi {
   private url = `${environment.apiUrl}/business`;
   get(): Observable<Business> { return this.http.get<Business>(this.url); }
   update(b: Business): Observable<Business> { return this.http.put<Business>(this.url, b); }
+  /** The app colours (owner only). */
+  updateTheme(t: { primary: string; accent: string }) { return this.http.put<{ primary: string; accent: string }>(`${this.url}/theme`, t); }
 }
 
 @Injectable({ providedIn: 'root' })
@@ -47,6 +49,10 @@ export class ItemsApi {
   update(i: Item): Observable<Item> { return this.http.put<Item>(`${this.url}/${i.id}`, i); }
   setActive(id: string, active: boolean) { return this.http.patch<void>(`${this.url}/${id}/active`, { active }); }
   remove(id: string) { return this.http.delete<void>(`${this.url}/${id}`); }
+  /** Creates every item of a type + cloth from a variant x size price grid; existing combinations are skipped. */
+  generate(req: { typeId: string; cloth: string; colours: string[]; unit: string; gstRate: number; rows: { variant: string; size: string; rate: number | null }[] }) {
+    return this.http.post<{ created: number; skipped: number }>(`${this.url}/generate`, req);
+  }
   /** Excel of the items, one sheet per type. typeId: '' = all, 'none' = no type, or a type id. */
   export(typeId?: string): Observable<Blob> { return this.http.get(`${this.url}/export`, { params: params({ typeId }), responseType: 'blob' }); }
 }

@@ -72,9 +72,6 @@ Restart the API, then open **Email templates** and use the send-test button on a
 Creating an account also confirms the email with a 6-digit code first (no account is made until it is entered). "Forgot password?" on the login screen resets the password with an emailed code. If email ever breaks and you are locked out, set `"Security": { "RequireOtp": false }` in `appsettings.Development.json` and restart.
 Auth endpoints are limited to 10 requests a minute per computer.
 
-**Google sign-in (optional, off until configured).** Create an OAuth *Web* client at console.cloud.google.com (APIs & Services → Credentials), add `http://localhost:4200` as an authorized JavaScript origin, and put the client id in `appsettings.Development.json` as `"Google": { "ClientId": "….apps.googleusercontent.com" }`.
-Only an existing account whose email matches the Google email can sign in this way.
-
 **Backups.** The API saves a backup file of each business once a day in `backups/` beside the app (git-ignored) and keeps the newest 14. Change this with `Backup:Folder`, `Backup:Keep` or `Backup:Enabled`.
 You can still download one any time from Reports. Copy the folder somewhere safe too: a backup on the same computer does not protect you if the computer is lost.
 

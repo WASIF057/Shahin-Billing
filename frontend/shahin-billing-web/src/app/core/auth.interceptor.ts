@@ -15,7 +15,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   return next(authed).pipe(
     catchError((err: HttpErrorResponse) => {
       // A 401 from the login-type calls just means a wrong password or code, not an ended session
-      const loginCall = /\/auth\/(login|register|verify-otp|verify-registration|resend-otp|forgot-password|reset-password|google)$/.test(req.url);
+      const loginCall = /\/auth\/(login|register|verify-otp|verify-registration|resend-otp|forgot-password|reset-password)$/.test(req.url);
       if (err.status === 401 && !loginCall) auth.logout();
       return throwError(() => err);
     }),

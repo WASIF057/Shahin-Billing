@@ -36,6 +36,17 @@ public class ItemsController(ItemService service, IValidator<Item> validator, Sh
         return created;
     }
 
+    /// <summary>Creates all the items of one type and cloth from a price grid (variant x size), skipping ones that already exist.</summary>
+    [Authorize(Roles = AppRoles.Owner)]
+    [HttpPost("generate")]
+    public async Task<GenerateItemsResult> Generate(GenerateItemsRequest req)
+    {
+        if (req.GstRate < 0 || req.GstRate > 28) throw new ShahinBilling.Api.Infrastructure.AppException("GST rate must be between 0 and 28%.");
+        var result = await service.GenerateAsync(BusinessId, req);
+        await Log("item.generated", "Item", req.TypeId, $"Created {result.Created} items from the price grid ({result.Skipped} already existed)");
+        return result;
+    }
+
     [Authorize(Roles = AppRoles.Owner)]
     [HttpPut("{id}")]
     public async Task<Item> Update(string id, Item item)

@@ -3,6 +3,7 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using ShahinBilling.Api.Data;
 using ShahinBilling.Api.Dtos;
+using ShahinBilling.Api.Helpers;
 using ShahinBilling.Api.Infrastructure;
 using ShahinBilling.Api.Models;
 
@@ -49,6 +50,48 @@ public class ItemService(MongoContext db)
         return item;
     }
 
+    /// <summary>
+    /// Creates one item for every row (variant + size + rate) and every chosen colour of one type and cloth.
+    /// Combinations that already exist are skipped, so running it again never duplicates. Rows with no rate are ignored.
+    /// </summary>
+    public async Task<GenerateItemsResult> GenerateAsync(string businessId, GenerateItemsRequest req)
+    {
+        var type = await db.ProductTypes.Find(t => t.BusinessId == businessId && t.Id == req.TypeId).FirstOrDefaultAsync()
+                   ?? throw new AppException("That type no longer exists. Pick the type again.");
+
+        var cloth = type.ClothTypes.Count > 0 ? ImportService.Pick(req.Cloth ?? "", type.ClothTypes, "cloth", type.Name, "") : "";
+        var coloursOfCloth = type.ClothColours.FirstOrDefault(c => c.Cloth.Equals(cloth, StringComparison.OrdinalIgnoreCase))?.Colours ?? new();
+        var colours = coloursOfCloth.Count == 0
+            ? new List<string> { "" }
+            : (req.Colours ?? new()).Select(c => ImportService.Pick(c, coloursOfCloth, "colour", type.Name, "")).Where(c => c.Length > 0).Distinct().ToList();
+        if (colours.Count == 0) throw new AppException($"Choose at least one colour of {cloth}.");
+
+        var rows = (req.Rows ?? new()).Where(r => r.Rate.HasValue).ToList();
+        if (rows.Count == 0) throw new AppException("Enter a rate for at least one row.");
+        if (rows.Count * colours.Count > 500) throw new AppException("That would create more than 500 items at once. Do it in smaller steps.");
+
+        var existing = await db.Items.Find(i => i.BusinessId == businessId && i.TypeId == type.Id).ToListAsync();
+        static string Key(string v, string c, string col, string s) => $"{v}|{c}|{col}|{s}".ToLowerInvariant();
+        var seen = new HashSet<string>(existing.Select(i => Key(i.Variant, i.Cloth, i.Colour, i.Size)));
+
+        int created = 0, skipped = 0;
+        foreach (var colour in colours)
+            foreach (var row in rows)
+            {
+                if (row.Rate!.Value < 0) throw new AppException("Rate can't be negative.");
+                var variant = type.UsesVariants ? ImportService.Pick(row.Variant ?? "", type.Variants, "variant", type.Name, "") : "";
+                var size = ImportService.Pick(row.Size ?? "", type.Sizes.Count > 0 ? type.Sizes : null, "size", type.Name, $"{type.Name} has no sizes.");
+                if (!seen.Add(Key(variant, cloth, colour, size))) { skipped++; continue; }
+                await CreateAsync(businessId, new Item
+                {
+                    TypeId = type.Id, Variant = variant, Cloth = cloth, Colour = colour, Size = size,
+                    Unit = string.IsNullOrWhiteSpace(req.Unit) ? "PCS" : req.Unit.Trim(), GstRate = req.GstRate, DefaultRate = row.Rate.Value,
+                });
+                created++;
+            }
+        return new GenerateItemsResult(created, skipped);
+    }
+
     /// <summary>Deletes an item that no bill uses. Bills keep a copy of the item, but a used item is kept so each bill's history stays complete; hide it instead.</summary>
     public async Task DeleteAsync(string businessId, string id)
     {
@@ -87,11 +130,11 @@ public class ItemService(MongoContext db)
                        ?? throw new AppException("That type no longer exists. Pick the type again.");
             item.TypeName = type.Name;
             item.Name = type.Name;   // the item is called after its type (Bed, Pillow...); variant and size tell them apart
-            item.Size = (item.Size ?? "").Trim();
-            item.Variant = type.UsesVariants ? (item.Variant ?? "").Trim() : "";
-            item.Cloth = type.ClothTypes.Count > 0 ? (item.Cloth ?? "").Trim() : "";
+            item.Size = TextClean.Plain(item.Size);
+            item.Variant = type.UsesVariants ? TextClean.Plain(item.Variant) : "";
+            item.Cloth = type.ClothTypes.Count > 0 ? TextClean.Plain(item.Cloth) : "";
             var colours = type.ClothColours.FirstOrDefault(c => c.Cloth.Equals(item.Cloth, StringComparison.OrdinalIgnoreCase))?.Colours;
-            item.Colour = item.Cloth.Length > 0 && colours is { Count: > 0 } ? (item.Colour ?? "").Trim() : "";
+            item.Colour = item.Cloth.Length > 0 && colours is { Count: > 0 } ? TextClean.Plain(item.Colour) : "";
             item.SizeOrVariant = ComposeLabel(item.Variant, item.Cloth, item.Colour, item.Size);
         }
         else { item.TypeId = ""; item.TypeName = ""; }

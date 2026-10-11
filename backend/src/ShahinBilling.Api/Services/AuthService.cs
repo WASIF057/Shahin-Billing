@@ -7,7 +7,7 @@ using ShahinBilling.Api.Models;
 
 namespace ShahinBilling.Api.Services;
 
-public class AuthService(MongoContext db, TokenService tokens, OtpService otp, IConfiguration config, SessionValidator sessions, ActivityService activity)
+public class AuthService(MongoContext db, TokenService tokens, OtpService otp, SessionValidator sessions, ActivityService activity)
 {
     // Checked when the email is unknown, so a wrong email takes as long as a wrong password
     private static readonly string DummyHash = BCrypt.Net.BCrypt.HashPassword("not-a-real-password");
@@ -111,33 +111,6 @@ public class AuthService(MongoContext db, TokenService tokens, OtpService otp, I
 
     private Task LogLoginAsync(User user, string how) =>
         activity.LogAsync(user.BusinessId, user.Id, user.Name, "auth.login", "Login", user.Id, $"{user.Name} logged in ({how})");
-
-    /// <summary>Sign in with Google. Only an existing account can log in: the Google email must match the account email.
-    /// Google has already checked who the person is, so no emailed code is asked for.</summary>
-    public async Task<AuthResponse> GoogleLoginAsync(string idToken)
-    {
-        var clientId = config["Google:ClientId"];
-        if (string.IsNullOrWhiteSpace(clientId)) throw new AppException("Google sign-in isn't set up.", 404);
-        Google.Apis.Auth.GoogleJsonWebSignature.Payload payload;
-        try
-        {
-            payload = await Google.Apis.Auth.GoogleJsonWebSignature.ValidateAsync(idToken,
-                new Google.Apis.Auth.GoogleJsonWebSignature.ValidationSettings { Audience = new[] { clientId } });
-        }
-        catch (Google.Apis.Auth.InvalidJwtException)
-        {
-            throw new AppException("Google sign-in didn't work. Please try again.", 401);
-        }
-        if (!payload.EmailVerified) throw new AppException("That Google account's email isn't verified.", 401);
-
-        var email = payload.Email.Trim().ToLowerInvariant();
-        var user = await db.Users.Find(u => u.Email == email).FirstOrDefaultAsync()
-                   ?? throw new AppException("No account uses this Google email. Log in with your password, or ask for an account for this email.", 401);
-        var business = await db.Businesses.Find(b => b.Id == user.BusinessId).FirstOrDefaultAsync() ?? throw new NotFoundException("Business");
-        if (!user.IsActive) throw new AppException("This login has been switched off. Ask the owner of the business.", 403);
-        await LogLoginAsync(user, "Google");
-        return Build(user, business);
-    }
 
     public async Task<UserDto> MeAsync(string userId)
     {

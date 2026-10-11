@@ -53,15 +53,6 @@ export class AuthService {
     return this.http.post<void>(`${this.url}/reset-password`, { email, code, newPassword });
   }
 
-  googleLogin(idToken: string): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.url}/google`, { idToken }).pipe(tap(r => this.store(r)));
-  }
-
-  /** Tells the login screen whether to show the Google button. */
-  config(): Observable<{ googleClientId: string | null }> {
-    return this.http.get<{ googleClientId: string | null }>(`${this.url}/config`);
-  }
-
   /** Step 1 of sign-up. With email set up, a code is emailed and nothing is created until it is entered. */
   register(data: { name: string; email: string; password: string; businessName: string }): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.url}/register`, data).pipe(tap(r => { if (r.auth) this.store(r.auth); }));

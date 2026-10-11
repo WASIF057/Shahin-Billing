@@ -45,7 +45,7 @@ public class AppFactory : WebApplicationFactory<Program>
             ["Mongo__ConnectionString"] = Conn, ["Mongo__Database"] = Db,
             ["Jwt__Key"] = "integration-test-signing-key-0123456789abcdef",
             ["Smtp__Host"] = "fake.local", ["Smtp__FromEmail"] = "billing@test.local",
-            ["Backup__Enabled"] = "false", ["RateLimit__AuthPerMinute"] = "1000", ["Security__RequireOtp"] = "true", ["Google__ClientId"] = "",
+            ["Backup__Enabled"] = "false", ["RateLimit__AuthPerMinute"] = "1000", ["Security__RequireOtp"] = "true",
         }) Environment.SetEnvironmentVariable(k, v);
     }
 

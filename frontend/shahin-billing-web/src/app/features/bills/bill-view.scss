@@ -4,9 +4,9 @@
 .label { font-size: 0.78rem; font-weight: 700; color: var(--navy); margin-bottom: 2px; }
 .table-scroll { overflow-x: auto; }
 .lines { width: 100%; border-collapse: collapse; min-width: 640px; }
-.lines th { font-size: 0.78rem; text-align: left; padding: 8px 6px; background: #f7f9fb; border-bottom: 1px solid var(--line); }
+.lines th { font-size: 0.78rem; text-align: left; padding: 8px 6px; background: var(--navy-hover); border-bottom: 1px solid var(--line); }
 .lines th.num { text-align: right; }
-.lines td { padding: 8px 6px; border-bottom: 1px solid #edf0f4; }
+.lines td { padding: 8px 6px; border-bottom: 1px solid var(--line-soft); }
 .sum { margin-left: auto; max-width: 340px; margin-top: 16px; }
 .row { display: flex; justify-content: space-between; padding: 4px 0; }
 .row.strong { font-weight: 700; }

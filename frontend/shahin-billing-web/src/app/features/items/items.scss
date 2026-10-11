@@ -11,4 +11,10 @@ tr.inactive td { opacity: 0.6; }
 .sr-row { display: grid; grid-template-columns: 170px 1fr 40px; gap: 12px; align-items: end; margin-bottom: 10px;
           background: var(--navy-soft); border-radius: var(--radius-sm); padding: 10px 10px 10px 12px; }
 .sr-del { align-self: end; }
+.grid-wrap { overflow-x: auto; margin-top: 8px; }
+.grid-table { width: 100%; border-collapse: collapse; }
+.grid-table th, .grid-table td { padding: 6px 8px; border-bottom: 1px solid var(--line); text-align: left; }
+.grid-table th { font-weight: 700; white-space: nowrap; }
+.gsize { font-weight: 600; white-space: nowrap; }
+.grid-count { margin-right: auto; }
 @media (max-width: 640px) { .sr-row { grid-template-columns: 1fr; } }

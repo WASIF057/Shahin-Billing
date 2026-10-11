@@ -18,6 +18,7 @@ import { RouterLink } from '@angular/router';
 import { fieldErrors } from '../../core/errors';
 import { GST_RATES, UNITS } from '../../core/gst';
 import { Client, Item, ProductType } from '../../core/models';
+import { Confirmer } from '../../core/confirmer.service';
 import { Notify } from '../../core/notify.service';
 import { InrPipe } from '../../shared/inr.pipe';
 
@@ -25,7 +26,7 @@ interface ClientOption { id: string; name: string; disabled: boolean; }
 
 const newItem = (): Item => ({
   id: '', typeId: '', typeName: '', variant: '', cloth: '', colour: '', size: '', name: '', sizeOrVariant: '', description: '', hsnCode: '', unit: 'PCS',
-  gstRate: 18, defaultRate: 0, specialRates: [], isActive: true,
+  gstRate: 18, defaultRate: null as unknown as number, specialRates: [], isActive: true,
 });
 
 @Component({
@@ -41,6 +42,7 @@ export class ItemsPage implements OnInit {
   private catalogApi = inject(CatalogApi);
   private confirm = inject(ConfirmationService);
   private notify = inject(Notify);
+  confirmer = inject(Confirmer);
 
   gstRates = GST_RATES.map(r => ({ label: `${r}%`, value: r }));
   units = UNITS;
@@ -112,6 +114,66 @@ export class ItemsPage implements OnInit {
     if (!t || !it.cloth || !this.coloursFor(t, it.cloth).includes(it.colour)) it.colour = '';
   }
 
+  // ---- price grid: create all items of a type + cloth at once ----
+  gridOpen = signal(false);
+  gridType = signal<ProductType | undefined>(undefined);
+  gridCloth = signal('');
+  gridColours = signal<string[]>([]);
+  gridUnit = signal('PCS');
+  gridGst = signal(18);
+  /** rates typed into the grid, keyed "variant|size" */
+  gridRates = signal<Record<string, number | null>>({});
+  gridSaving = signal(false);
+
+  /** Columns of the grid: the type's variants, or one plain "Rate" column when it has none. */
+  gridVariants = computed(() => { const t = this.gridType(); return t?.usesVariants && t.variants.length ? t.variants : ['']; });
+  gridColourChoices = computed(() => { const t = this.gridType(); return t ? this.coloursFor(t, this.gridCloth()) : []; });
+  gridCount = computed(() => {
+    const filled = Object.values(this.gridRates()).filter(v => v !== null && v !== undefined).length;
+    return filled * Math.max(1, this.gridColours().length);
+  });
+
+  openGrid() {
+    this.gridType.set(undefined); this.gridCloth.set(''); this.gridColours.set([]); this.gridRates.set({});
+    this.gridUnit.set('PCS'); this.gridGst.set(18);
+    this.gridOpen.set(true);
+  }
+
+  gridTypeChanged(id: string) {
+    const t = this.types().find(x => x.id === id);
+    this.gridType.set(t);
+    this.gridCloth.set(''); this.gridColours.set([]); this.gridRates.set({});
+  }
+
+  gridRate(variant: string, size: string) { return this.gridRates()[`${variant}|${size}`] ?? null; }
+  setGridRate(variant: string, size: string, v: number | null) { this.gridRates.update(r => ({ ...r, [`${variant}|${size}`]: v })); }
+
+  /** Enter in a rate box moves to the next one: down the column, then to the top of the next column. */
+  gridEnter(e: Event, vi: number, si: number, sizeCount: number) {
+    e.preventDefault();
+    const next = si + 1 < sizeCount ? [vi, si + 1] : [vi + 1, 0];
+    const el = document.getElementById(`grid-${next[0]}-${next[1]}`) as HTMLInputElement | null;
+    if (el) { el.focus(); el.select(); }
+  }
+
+  askSaveGrid() { this.confirmer.save(`these ${this.gridCount()} items`, () => this.saveGrid()); }
+
+  saveGrid() {
+    const t = this.gridType();
+    if (!t) return;
+    const rows = Object.entries(this.gridRates())
+      .filter(([, rate]) => rate !== null && rate !== undefined)
+      .map(([k, rate]) => { const [variant, size] = k.split('|'); return { variant, size, rate }; });
+    this.gridSaving.set(true);
+    this.api.generate({ typeId: t.id, cloth: this.gridCloth(), colours: this.gridColours(), unit: this.gridUnit(), gstRate: this.gridGst(), rows }).subscribe({
+      next: r => {
+        this.notify.ok(`${r.created} item${r.created === 1 ? '' : 's'} created` + (r.skipped ? `, ${r.skipped} already existed` : ''));
+        this.gridOpen.set(false); this.gridSaving.set(false); this.load();
+      },
+      error: e => { this.notify.error(e); this.gridSaving.set(false); },
+    });
+  }
+
   load() {
     this.loading.set(true);
     this.api.list().subscribe({
@@ -149,8 +211,13 @@ export class ItemsPage implements OnInit {
 
   specialCount(i: Item) { return i.specialRates.reduce((n, s) => n + s.clientIds.length, 0); }
 
+  askSave() { this.confirmer.save('this item', () => this.save()); }
+
   save() {
     const it = this.editing();
+    // an empty box means 0; special rates with an empty box are filled the same way
+    it.defaultRate ??= 0;
+    it.specialRates.forEach(s => s.rate ??= 0);
     this.saving.set(true);
     this.errors.set({});
     const req = it.id ? this.api.update(it) : this.api.create(it);
@@ -194,6 +261,12 @@ export class ItemsPage implements OnInit {
   }
 
   toggleActive(i: Item) {
+    this.confirmer.ask(i.isActive ? 'Hide this item?' : 'Show this item again?',
+      i.isActive ? 'It will be hidden from billing. Old bills are not affected.' : 'It will be available in billing again.',
+      i.isActive ? 'Yes, hide' : 'Yes, show', () => this.doToggleActive(i));
+  }
+
+  private doToggleActive(i: Item) {
     this.api.setActive(i.id, !i.isActive).subscribe({
       next: () => { this.notify.ok(i.isActive ? 'Item hidden from billing' : 'Item active again'); this.load(); },
       error: e => this.notify.error(e),

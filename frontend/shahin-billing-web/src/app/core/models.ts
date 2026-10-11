@@ -20,7 +20,7 @@ export interface TemplateSettings {
 }
 
 export interface Business {
-  id: string; name: string; logo: string; address: Address;
+  id: string; name: string; logo: string; logoStyle?: string; theme?: { primary: string; accent: string }; address: Address;
   phone: string; alternatePhone: string; email: string; website: string;
   gstin: string; pan: string; bank: BankDetails; signature: string; authorisedSignatoryName: string;
   termsAndConditions: string; declarationText: string;
@@ -32,7 +32,7 @@ export interface LoginResponse { otpRequired: boolean; challengeId: string | nul
 
 export interface SpecialRate { id?: string; rate: number; clientIds: string[]; }
 export interface ProductType {
-  id: string; name: string; usesVariants: boolean; variants: string[]; clothTypes: string[]; clothColours: { cloth: string; colours: string[] }[]; sizes: string[];
+  id: string; name: string; category: string; usesVariants: boolean; variants: string[]; clothTypes: string[]; clothColours: { cloth: string; colours: string[] }[]; sizes: string[];
 }
 
 export interface Item {

@@ -6,9 +6,9 @@
   display: flex; flex-direction: column; justify-content: space-between;
   position: relative; overflow: hidden;
   background:
-    radial-gradient(520px 420px at 15% 10%, rgba(63, 123, 189, 0.55), transparent 65%),
-    radial-gradient(460px 380px at 90% 95%, rgba(232, 163, 61, 0.28), transparent 65%),
-    linear-gradient(160deg, #101a30 0%, #1a2f55 100%);
+    radial-gradient(520px 420px at 15% 10%, rgba(var(--navy-rgb), 0.6), transparent 65%),
+    radial-gradient(460px 380px at 90% 95%, rgba(var(--accent-rgb), 0.3), transparent 65%),
+    linear-gradient(160deg, var(--side-a) 0%, var(--side-b) 100%);
 }
 /* Ticking stripes fading in from the right edge */
 .side::after {
@@ -21,17 +21,17 @@
 .brand { display: flex; align-items: center; gap: 12px; color: #fff; font-weight: 800; font-size: 1.1rem; }
 .mark {
   width: 40px; height: 40px; border-radius: 11px;
-  background: repeating-linear-gradient(90deg, #f6f8fc 0 4px, #6f9bd0 4px 7px);
+  background: repeating-linear-gradient(90deg, #f6f8fc 0 4px, var(--accent) 4px 7px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.4);
 }
-.side h1 { color: #fff; font-size: 2.5rem; line-height: 1.12; max-width: 15ch; margin-bottom: 14px; letter-spacing: -0.02em; }
+.side h1 { color: #fff; font-size: 2.6rem; line-height: 1.1; max-width: 16ch; margin-bottom: 14px; letter-spacing: -0.02em; }
 .side h1::after { display: none; }
 .side p { max-width: 42ch; font-size: 1.02rem; line-height: 1.6; color: #b9c6dc; }
 .perks { list-style: none; margin: 26px 0 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
 .perks li { display: flex; align-items: center; gap: 12px; font-weight: 600; color: #e4ebf7; }
 .perks i {
   width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; font-size: 0.9rem;
-  background: rgba(255, 255, 255, 0.1); color: #f3b34c; border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.1); color: var(--accent); border: 1px solid rgba(255, 255, 255, 0.12);
 }
 .side small { color: #8fa0bb; }
 
@@ -51,7 +51,6 @@ form .field input { padding: 11px 12px; }
 .forgot:hover { text-decoration: underline; }
 .divider { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 0.85rem; }
 .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }
-.google-wrap { display: flex; justify-content: center; min-height: 44px; }
 .link-btn { background: none; border: 0; padding: 0; font: inherit; font-weight: 700; color: var(--navy); cursor: pointer; }
 .link-btn:disabled { color: var(--muted); cursor: default; }
 .link-btn:not(:disabled):hover { text-decoration: underline; }
@@ -67,3 +66,55 @@ form button[type='submit'] { width: 100%; padding: 12px; font-size: 1rem; margin
   .perks { display: none; }
   form { padding: 26px 22px; }
 }
+
+/* ---------- Left panel extras ---------- */
+.pitch { max-width: 520px; }
+.eyebrow {
+  display: inline-block; margin-bottom: 16px; padding: 5px 12px; border-radius: 999px; font-size: 0.74rem; font-weight: 800;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+/* A small decorative invoice, to show what the app produces */
+.mock {
+  position: relative; margin-top: 34px; width: 290px; padding: 16px 18px 14px; border-radius: 16px; background: rgba(255, 255, 255, 0.96);
+  color: #1b2438; transform: rotate(-3deg); box-shadow: 0 24px 50px rgba(0, 0, 0, 0.35); animation: float 6s ease-in-out infinite;
+}
+.mock-head { display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; letter-spacing: 0.08em; margin-bottom: 12px; }
+.mock-head span { color: #6a7587; font-weight: 700; }
+.mock-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 9px; }
+.mock-row span { display: block; height: 8px; border-radius: 4px; background: #e3e8f1; }
+.mock-row .w60 { width: 55%; } .mock-row .w50 { width: 45%; } .mock-row .w40 { width: 36%; } .mock-row .w20 { width: 18%; background: #cfd8e8; }
+.mock-total { display: flex; justify-content: space-between; align-items: baseline; margin-top: 12px; padding-top: 10px; border-top: 2px dashed #d5dcea; font-size: 0.78rem; }
+.mock-total b { font-size: 1.1rem; color: var(--navy-deep); }
+.mock-badge {
+  position: absolute; right: -14px; top: -14px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px;
+  background: #1f9d63; color: #fff; font-size: 0.74rem; font-weight: 800; box-shadow: 0 8px 18px rgba(31, 157, 99, 0.45); transform: rotate(6deg);
+}
+@keyframes float { 0%, 100% { transform: rotate(-3deg) translateY(0); } 50% { transform: rotate(-3deg) translateY(-8px); } }
+@media (prefers-reduced-motion: reduce) { .mock { animation: none; } }
+
+/* ---------- Form side ---------- */
+.form-side {
+  position: relative;
+  background:
+    radial-gradient(520px 360px at 85% 8%, rgba(var(--navy-rgb), 0.10), transparent 70%),
+    radial-gradient(420px 300px at 10% 95%, rgba(var(--accent-rgb), 0.12), transparent 70%),
+    var(--bg);
+}
+form { border-radius: 26px; box-shadow: 0 30px 70px rgba(var(--navy-rgb), 0.18); max-width: 440px; position: relative; overflow: hidden; }
+form::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 5px; background: var(--grad); }
+.form-head { display: flex; flex-direction: column; gap: 6px; }
+.form-head h2::after { display: none; }
+.form-head p { margin: 0; color: var(--muted); font-size: 0.92rem; }
+.form-icon {
+  width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; font-size: 1.15rem; margin-bottom: 6px;
+  background: var(--grad); color: #fff; box-shadow: 0 10px 22px rgba(var(--navy-rgb), 0.35);
+}
+form .field input { padding: 12px 14px; }
+form p-iconfield { display: block; }
+form .field p-iconfield input.p-inputtext { padding-left: 2.9rem; }
+form .field p-iconfield .p-inputicon { left: 1rem; }
+form button[type='submit'] { border-radius: 12px; height: 48px; font-weight: 800; letter-spacing: 0.01em; }
+@media (max-width: 860px) { .mock { display: none; } .eyebrow { margin-bottom: 8px; } }
+
+.brand-logo { width: 270px; max-width: 100%; background: #fff; border-radius: 16px; padding: 14px 20px; box-shadow: 0 14px 30px rgba(0, 0, 0, 0.3); }

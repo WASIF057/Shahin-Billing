@@ -1,6 +1,8 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { ConfirmationService } from 'primeng/api';
+import { SelectButtonModule } from 'primeng/selectbutton';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
@@ -10,6 +12,7 @@ import { PasswordModule } from 'primeng/password';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { MessageModule } from 'primeng/message';
 import { BusinessApi, MiscApi } from '../../core/api.service';
+import { BrandService } from '../../core/brand.service';
 import { AuthService } from '../../core/auth.service';
 import { fieldErrors } from '../../core/errors';
 import { formatInvoiceNumber, isValidGstin, STATES, stateFromGstin } from '../../core/gst';
@@ -19,7 +22,7 @@ import { ImagePicker } from '../../shared/image-picker';
 
 @Component({
   selector: 'app-business-settings',
-  imports: [FormsModule, ButtonModule, InputTextModule, InputNumberModule, SelectModule, TextareaModule,
+  imports: [FormsModule, SelectButtonModule, ButtonModule, InputTextModule, InputNumberModule, SelectModule, TextareaModule,
             PasswordModule, MessageModule, ToggleSwitchModule, ImagePicker],
   templateUrl: './business-settings.html',
 })
@@ -27,6 +30,10 @@ export class BusinessSettings implements OnInit {
   private api = inject(BusinessApi);
   private misc = inject(MiscApi);
   private auth = inject(AuthService);
+  private brand = inject(BrandService);
+  private router = inject(Router);
+  logoStyles = [{ label: 'Theme-coloured logo', value: 'Themed' }, { label: 'My own image', value: 'Image' }];
+  private confirm = inject(ConfirmationService);
   notify = inject(Notify);
   welcome = inject(ActivatedRoute).snapshot.queryParamMap.has('welcome');
 
@@ -52,7 +59,7 @@ export class BusinessSettings implements OnInit {
   pw = { current: '', next: '' };
 
   ngOnInit() {
-    this.api.get().subscribe({ next: b => this.biz.set(b), error: e => this.notify.error(e) });
+    this.api.get().subscribe({ next: b => { if (!b.logoStyle) b.logoStyle = b.logo ? 'Image' : 'Themed'; this.biz.set(b); }, error: e => this.notify.error(e) });
   }
 
   gstinChanged(b: Business) {
@@ -65,6 +72,18 @@ export class BusinessSettings implements OnInit {
 
   gstinInvalid(b: Business) { return !!b.gstin && b.gstin.length >= 15 && !isValidGstin(b.gstin); }
 
+  /** Asks first; the save itself only runs when the owner confirms. */
+  confirmSave() {
+    if (!this.biz() || this.saving()) return;
+    this.confirm.confirm({
+      header: 'Save changes?',
+      message: 'Your business details will be updated and used on new bills. You will then go back to the dashboard.',
+      icon: 'pi pi-save',
+      acceptLabel: 'Yes, save', rejectLabel: 'Review again',
+      accept: () => this.save(),
+    });
+  }
+
   save() {
     const b = this.biz();
     if (!b) return;
@@ -75,8 +94,10 @@ export class BusinessSettings implements OnInit {
       next: saved => {
         this.biz.set(saved);
         this.auth.setBusinessName(saved.name);
+        this.brand.set(saved.logo, saved.logoStyle);
         this.notify.ok('Business details saved');
         this.saving.set(false);
+        this.router.navigate(['/']);   // back to the dashboard once saved
       },
       error: e => { this.errors.set(fieldErrors(e)); this.notify.error(e); this.saving.set(false); },
     });

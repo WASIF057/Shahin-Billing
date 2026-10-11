@@ -23,6 +23,20 @@ public class BusinessController(BusinessService service) : StaffApiControllerBas
         return saved;
     }
 
+    /// <summary>The app colours. Only the owner can change them; staff see them through GET.</summary>
+    [Authorize(Roles = AppRoles.Owner)]
+    [HttpPut("theme")]
+    public async Task<UiTheme> UpdateTheme(UiTheme theme)
+    {
+        static bool Ok(string? c) => string.IsNullOrEmpty(c) || System.Text.RegularExpressions.Regex.IsMatch(c, "^#[0-9a-fA-F]{6}$");
+        if (!Ok(theme.Primary) || !Ok(theme.Accent)) throw new ShahinBilling.Api.Infrastructure.AppException("Colours must look like #2a5b8f.");
+        theme.Primary = (theme.Primary ?? "").ToLowerInvariant();
+        theme.Accent = (theme.Accent ?? "").ToLowerInvariant();
+        var saved = await service.UpdateThemeAsync(BusinessId, theme);
+        await Log("business.theme", "Setup", BusinessId, "Changed the app colour theme");
+        return saved;
+    }
+
     [HttpGet("/api/meta/states")]
     public IEnumerable<object> States() => StateCodes.All.Select(kv => new { code = kv.Key, name = kv.Value });
 }

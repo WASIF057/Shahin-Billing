@@ -5,44 +5,69 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { MessageModule } from 'primeng/message';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
+import { AppLogo } from '../../shared/app-logo';
 import { AuthService } from '../../core/auth.service';
 import { errorMessage } from '../../core/errors';
 
 @Component({
   selector: 'app-register',
-  imports: [FormsModule, RouterLink, ButtonModule, InputTextModule, PasswordModule, MessageModule],
+  imports: [FormsModule, RouterLink, ButtonModule, InputTextModule, PasswordModule, MessageModule, IconFieldModule, InputIconModule, AppLogo],
   styleUrl: './auth.scss',
   template: `
     <div class="wrap">
       <section class="side">
-        <div class="brand"><span class="mark" aria-hidden="true"></span> Shahin Billing</div>
-        <div>
-          <h1>Set up once, bill every day.</h1>
-          <p>After signing up, add your business details, your items with their rates, and your clients. Then every bill is a few clicks.</p>
+        <div class="brand-logo"><app-logo /></div>
+        <div class="pitch">
+          <span class="eyebrow">Get started in minutes</span>
+          <h1>Set up once, then bill every day.</h1>
+          <p>Add your business details, products and clients. After that, every invoice takes just a few clicks.</p>
           <ul class="perks">
-            <li><i class="pi pi-bolt"></i> Rates and GST fill in automatically</li>
-            <li><i class="pi pi-file-pdf"></i> Professional PDF tax invoices</li>
-            <li><i class="pi pi-envelope"></i> Bills emailed to you and your client</li>
+            <li><i class="pi pi-building"></i> Your business, your branding</li>
+            <li><i class="pi pi-box"></i> Products with client-specific rates</li>
+            <li><i class="pi pi-shield"></i> Your data stays private to your account</li>
           </ul>
+          <div class="mock" aria-hidden="true">
+            <div class="mock-head"><b>TAX INVOICE</b><span>INV-0042</span></div>
+            <div class="mock-row"><span class="w60"></span><span class="w20"></span></div>
+            <div class="mock-row"><span class="w50"></span><span class="w20"></span></div>
+            <div class="mock-row"><span class="w40"></span><span class="w20"></span></div>
+            <div class="mock-total"><span>Grand total</span><b>&#8377; 24,780.00</b></div>
+            <span class="mock-badge"><i class="pi pi-check"></i> Paid</span>
+          </div>
         </div>
-        <small>Your data stays private to your account.</small>
+        <small>&copy; {{ year }} Shahin Billing &middot; Secure and private</small>
       </section>
       <section class="form-side">
         @if (!challengeId()) {
           <form (ngSubmit)="submit()" #f="ngForm">
-            <h2>Create your account</h2>
+            <div class="form-head">
+              <span class="form-icon"><i class="pi pi-user-plus"></i></span>
+              <h2>Create your account</h2>
+              <p>It takes less than a minute. No card needed.</p>
+            </div>
             @if (error()) { <p-message severity="error" [text]="error()!" /> }
             <div class="field">
               <label for="biz">Business name</label>
-              <input pInputText id="biz" name="biz" [(ngModel)]="model.businessName" required placeholder="Shahin Enterprises" />
+              <p-iconfield>
+                <p-inputicon class="pi pi-building" />
+                <input pInputText id="biz" name="biz" [(ngModel)]="model.businessName" required placeholder="Your business name" />
+              </p-iconfield>
             </div>
             <div class="field">
               <label for="name">Your name</label>
-              <input pInputText id="name" name="name" [(ngModel)]="model.name" required autocomplete="name" />
+              <p-iconfield>
+                <p-inputicon class="pi pi-user" />
+                <input pInputText id="name" name="name" [(ngModel)]="model.name" required autocomplete="name" placeholder="Full name" />
+              </p-iconfield>
             </div>
             <div class="field">
               <label for="email">Email</label>
-              <input pInputText id="email" name="email" type="email" [(ngModel)]="model.email" required autocomplete="email" />
+              <p-iconfield>
+                <p-inputicon class="pi pi-envelope" />
+                <input pInputText id="email" name="email" type="email" [(ngModel)]="model.email" required autocomplete="email" placeholder="you@company.com" />
+              </p-iconfield>
               <span class="hint">We’ll email a 6-digit code to confirm it.</span>
             </div>
             <div class="field">
@@ -57,7 +82,7 @@ import { errorMessage } from '../../core/errors';
         } @else {
           <!-- Step 2: confirm the email with the code we sent. The account is created only now. -->
           <form (ngSubmit)="verify()">
-            <h2>Confirm your email</h2>
+            <div class="form-head"><span class="form-icon"><i class="pi pi-envelope"></i></span><h2>Confirm your email</h2></div>
             <p class="muted" style="margin: 0">We emailed a 6-digit code to <strong>{{ masked() }}</strong>. Enter it to finish creating your account. It works for 10 minutes.</p>
             @if (error()) { <p-message severity="error" [text]="error()!" /> }
             <input pInputText class="code" name="code" [ngModel]="code" (ngModelChange)="onCode($event)" maxlength="6"
@@ -79,6 +104,7 @@ import { errorMessage } from '../../core/errors';
 export class Register implements OnDestroy {
   private auth = inject(AuthService);
   private router = inject(Router);
+  year = new Date().getFullYear();
   model = { businessName: '', name: '', email: '', password: '' };
   busy = signal(false);
   error = signal<string | null>(null);

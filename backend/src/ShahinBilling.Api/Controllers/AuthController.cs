@@ -7,7 +7,7 @@ using ShahinBilling.Api.Services;
 
 namespace ShahinBilling.Api.Controllers;
 
-public class AuthController(AuthService auth, IConfiguration config, OtpService otp) : ApiControllerBase
+public class AuthController(AuthService auth, OtpService otp) : ApiControllerBase
 {
     [AllowAnonymous, EnableRateLimiting("auth"), HttpPost("register")]
     public async Task<LoginResponse> Register(RegisterRequest req, [FromServices] IValidator<RegisterRequest> v)
@@ -50,13 +50,6 @@ public class AuthController(AuthService auth, IConfiguration config, OtpService 
         await auth.ResetPasswordAsync(req);
         return NoContent();
     }
-
-    [AllowAnonymous, EnableRateLimiting("auth"), HttpPost("google")]
-    public Task<AuthResponse> Google(GoogleLoginRequest req) => auth.GoogleLoginAsync(req.IdToken);
-
-    /// <summary>What the login screen needs to know: whether to show the Google button.</summary>
-    [AllowAnonymous, HttpGet("config")]
-    public AuthConfig GetConfig() => new(string.IsNullOrWhiteSpace(config["Google:ClientId"]) ? null : config["Google:ClientId"]);
 
     [HttpGet("me")]
     public Task<UserDto> Me() => auth.MeAsync(UserId);

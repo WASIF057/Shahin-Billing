@@ -18,6 +18,7 @@ import { ClientsApi, ItemsApi, OrdersApi } from '../../core/api.service';
 import { OrderBadge } from '../../core/order-badge.service';
 import { toIsoDate } from '../../core/gst';
 import { Client, Item, Order, OrderPriority, OrderStatus } from '../../core/models';
+import { Confirmer } from '../../core/confirmer.service';
 import { Notify } from '../../core/notify.service';
 
 /** Orders: the bucket of orders clients placed on the ordering website, for the owner and staff. */
@@ -75,7 +76,7 @@ import { Notify } from '../../core/notify.service';
               <td class="row-actions">
                 <button pButton type="button" icon="pi pi-eye" [text]="true" pTooltip="View" (click)="view(o)" aria-label="View"></button>
                 @if (o.status === 'New') {
-                  <button pButton type="button" icon="pi pi-check" [text]="true" pTooltip="Accept" (click)="accept(o)" aria-label="Accept"></button>
+                  <button pButton type="button" icon="pi pi-check" [text]="true" pTooltip="Accept" (click)="askAccept(o)" aria-label="Accept"></button>
                 }
                 @if (o.status === 'New' || o.status === 'Accepted') {
                   <button pButton type="button" icon="pi pi-file-edit" [text]="true" pTooltip="Make the bill" (click)="makeBill(o)" aria-label="Make the bill"></button>
@@ -111,7 +112,7 @@ import { Notify } from '../../core/notify.service';
       <ng-template #footer>
         <button pButton type="button" label="Close" [text]="true" (click)="viewOpen.set(false)"></button>
         @if (viewing(); as o) {
-          @if (o.status === 'New') { <button pButton type="button" label="Accept" icon="pi pi-check" [outlined]="true" (click)="accept(o)"></button> }
+          @if (o.status === 'New') { <button pButton type="button" label="Accept" icon="pi pi-check" [outlined]="true" (click)="askAccept(o)"></button> }
           @if (o.status === 'New' || o.status === 'Accepted') { <button pButton type="button" label="Make the bill" icon="pi pi-file-edit" (click)="makeBill(o)"></button> }
         }
       </ng-template>
@@ -119,7 +120,7 @@ import { Notify } from '../../core/notify.service';
 
     <p-dialog header="Take an order" [visible]="takeOpen()" (visibleChange)="takeOpen.set($event)" [modal]="true"
               [style]="{ width: '700px' }" [breakpoints]="{ '760px': '96vw' }" [draggable]="false">
-      <form id="takeForm" class="take" (ngSubmit)="saveTake()" (keydown.enter)="$event.preventDefault()">
+      <form id="takeForm" class="take" (ngSubmit)="askSaveTake()" (keydown.enter)="$event.preventDefault()">
         <div class="field">
           <label for="tclient">Client</label>
           <p-select inputId="tclient" name="client" [options]="clients()" optionLabel="name" optionValue="id" [(ngModel)]="t.clientId" (onChange)="clientPicked()"
@@ -184,7 +185,7 @@ import { Notify } from '../../core/notify.service';
         </div>
       </form>
       <ng-template #footer>
-        <button pButton type="button" label="Cancel" [text]="true" (click)="takeOpen.set(false)"></button>
+        <button pButton type="button" label="Cancel" [text]="true" (click)="confirmer.discard(() => takeOpen.set(false))"></button>
         <button pButton type="submit" form="takeForm" label="Save order" icon="pi pi-check" [loading]="taking()"></button>
       </ng-template>
     </p-dialog>
@@ -218,7 +219,7 @@ import { Notify } from '../../core/notify.service';
     .no { font-weight: 800; }
     .nm { font-weight: 600; }
     .items { max-width: 340px; }
-    tr.fresh td { background: #fffbea; }
+    tr.fresh td { background: var(--warn-bg); }
     .row-actions { text-align: right; white-space: nowrap; }
     .head { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px; }
     .lines { list-style: none; margin: 0; padding: 0; }
@@ -234,6 +235,7 @@ export class OrdersPage implements OnInit {
   private itemsApi = inject(ItemsApi);
   private router = inject(Router);
   private notify = inject(Notify);
+  confirmer = inject(Confirmer);
   private badge = inject(OrderBadge);
 
   rows = signal<Order[]>([]);
@@ -310,6 +312,8 @@ export class OrdersPage implements OnInit {
     this.t.emailClient = !!this.takeClientEmail();
   }
 
+  askSaveTake() { this.confirmer.save('this order', () => this.saveTake()); }
+
   saveTake() {
     if (!this.t.clientId) { this.notify.error('Choose the client who is ordering.'); return; }
     if (!this.chosen().length) { this.notify.error('Add at least one product.'); return; }
@@ -344,6 +348,8 @@ export class OrdersPage implements OnInit {
   }
 
   view(o: Order) { this.viewing.set(o); this.viewOpen.set(true); }
+
+  askAccept(o: Order) { this.confirmer.ask('Accept this order?', `Order ${o.orderNumber} will be accepted and the client will be emailed.`, 'Yes, accept', () => this.accept(o)); }
 
   accept(o: Order) {
     this.api.setStatus(o.id, 'Accepted').subscribe({

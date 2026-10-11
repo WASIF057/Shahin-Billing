@@ -2,7 +2,7 @@ import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { providePrimeNG } from 'primeng/config';
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { Confirmation, ConfirmationService, MessageService } from 'primeng/api';
 import { definePreset } from '@primeuix/themes';
 import Aura from '@primeuix/themes/aura';
 import { routes } from './app.routes';
@@ -18,6 +18,18 @@ const ShahinPreset = definePreset(Aura, {
   },
 });
 
+/**
+ * Every "Are you sure?" pop-up gets a round icon in a matching tone (red for delete and cancel, blue for the rest),
+ * even where the code that asks did not choose an icon.
+ */
+class FriendlyConfirmation extends ConfirmationService {
+  override confirm(c: Confirmation) {
+    const danger = (c.acceptButtonStyleClass ?? '').includes('danger');
+    const icon = c.icon || (danger ? 'pi pi-exclamation-triangle' : 'pi pi-question-circle');
+    return super.confirm({ ...c, icon: `${icon} ${danger ? 'pop-danger' : 'pop-info'}` });
+  }
+}
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
@@ -29,6 +41,6 @@ export const appConfig: ApplicationConfig = {
       ripple: false,
     }),
     MessageService,
-    ConfirmationService,
+    { provide: ConfirmationService, useClass: FriendlyConfirmation },
   ],
 };

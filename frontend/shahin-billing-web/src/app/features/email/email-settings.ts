@@ -15,6 +15,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { EmailApi } from '../../core/api.service';
 import { fieldErrors } from '../../core/errors';
 import { EmailTemplate, ReminderSettings } from '../../core/models';
+import { Confirmer } from '../../core/confirmer.service';
 import { Notify } from '../../core/notify.service';
 
 type TextKey = 'subject' | 'body';
@@ -123,7 +124,7 @@ const fill = (text: string) => text.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k: strin
               <span class="hint">per bill</span>
             </div>
           </div>
-          <div><button pButton type="button" label="Save reminder settings" icon="pi pi-check" [outlined]="true" [loading]="savingRem()" (click)="saveReminders()"></button></div>
+          <div><button pButton type="button" label="Save reminder settings" icon="pi pi-check" [outlined]="true" [loading]="savingRem()" (click)="askSaveReminders()"></button></div>
         }
       </section>
 
@@ -193,7 +194,7 @@ const fill = (text: string) => text.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k: strin
               (visibleChange)="dialogOpen.set($event)" [modal]="true" [style]="{ width: '720px' }"
               [breakpoints]="{ '780px': '96vw' }" [draggable]="false">
       @let t = editing();
-      <form (ngSubmit)="save()" id="emailForm" class="form">
+      <form (ngSubmit)="askSave()" id="emailForm" class="form">
         @if (!t.id) {
           <div class="field">
             <label for="estd">Start from a standard format</label>
@@ -252,7 +253,7 @@ const fill = (text: string) => text.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k: strin
         </div>
       </form>
       <ng-template #footer>
-        <button pButton type="button" label="Cancel" [text]="true" (click)="dialogOpen.set(false)"></button>
+        <button pButton type="button" label="Cancel" [text]="true" (click)="confirmer.discard(() => dialogOpen.set(false))"></button>
         <button pButton type="submit" form="emailForm" [label]="t.id ? 'Save template' : 'Create template'" icon="pi pi-check" [loading]="saving()"></button>
       </ng-template>
     </p-dialog>
@@ -263,14 +264,14 @@ const fill = (text: string) => text.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k: strin
     .rem-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
     .rem-grid.dim { opacity: 0.55; }
     @media (max-width: 760px) { .rem-grid { grid-template-columns: 1fr; } }
-    .notice { background: #fff8e6; border-color: #f1d28a; margin-bottom: 16px; }
+    .notice { background: var(--warn-bg); border-color: var(--warn-line); margin-bottom: 16px; }
     .tname { font-weight: 700; }
     .subj { max-width: 280px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     tr.inactive td:not(:nth-child(5)):not(:last-child) { opacity: 0.55; }
     .row-actions { text-align: right; white-space: nowrap; }
     .chips { display: flex; flex-wrap: wrap; gap: 6px; }
     .chip { background: var(--navy-soft); color: var(--navy); border-radius: 999px; padding: 2px 10px; font-size: 0.78rem; font-weight: 600; border: 0; }
-    .chip.pick { cursor: pointer; font-family: monospace; font-weight: 500; background: #fff; border: 1px solid var(--line); color: var(--ink); }
+    .chip.pick { cursor: pointer; font-family: monospace; font-weight: 500; background: var(--surface); border: 1px solid var(--line); color: var(--ink); }
     .chip.pick:hover { background: var(--navy-soft); }
     .form { display: flex; flex-direction: column; gap: 16px; }
     .two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
@@ -278,7 +279,7 @@ const fill = (text: string) => text.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k: strin
     .toggles { display: flex; gap: 28px; flex-wrap: wrap; }
     .facts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px 20px; }
     .mail { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
-    .mail-subject { padding: 10px 14px; font-weight: 700; background: #f6f9fd; border-bottom: 1px solid var(--line); }
+    .mail-subject { padding: 10px 14px; font-weight: 700; background: var(--navy-hover); border-bottom: 1px solid var(--line); }
     .mail-body { padding: 14px; white-space: pre-wrap; line-height: 1.55; }
     @media (max-width: 700px) { .two { grid-template-columns: 1fr; } }
   `,
@@ -286,6 +287,7 @@ const fill = (text: string) => text.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k: strin
 export class EmailSettingsPage implements OnInit {
   private api = inject(EmailApi);
   private notify = inject(Notify);
+  confirmer = inject(Confirmer);
   private confirm = inject(ConfirmationService);
 
   templates = signal<EmailTemplate[]>([]);
@@ -343,6 +345,8 @@ export class EmailSettingsPage implements OnInit {
   rem = signal<ReminderSettings | null>(null);
   savingRem = signal(false);
 
+  askSaveReminders() { this.confirmer.save('the reminder settings', () => this.saveReminders()); }
+
   saveReminders() {
     this.savingRem.set(true);
     this.api.saveReminders(this.rem()!).subscribe({
@@ -399,6 +403,8 @@ export class EmailSettingsPage implements OnInit {
     const t = this.editing();
     t[this.active] += `{{${key}}}`;
   }
+
+  askSave() { this.confirmer.save('this email template', () => this.save()); }
 
   save() {
     const t = this.editing();

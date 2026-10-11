@@ -15,7 +15,7 @@
         }
         <button pButton type="button" label="Duplicate" icon="pi pi-copy" [outlined]="true" (click)="duplicate()"></button>
         @if (i.status === 'Draft') {
-          <button pButton type="button" label="Finalize" icon="pi pi-check" (click)="finalize()"></button>
+          <button pButton type="button" label="Finalize" icon="pi pi-check" (click)="askFinalize()"></button>
         }
       </div>
     </div>
@@ -180,8 +180,8 @@
         </div>
       </div>
       <ng-template #footer>
-        <button pButton type="button" label="Cancel" [text]="true" (click)="payOpen.set(false)"></button>
-        <button pButton type="button" label="Record payment" [loading]="busy()" [disabled]="!(pay.amount > 0)" (click)="savePayment()"></button>
+        <button pButton type="button" label="Cancel" [text]="true" (click)="confirmer.discard(() => payOpen.set(false))"></button>
+        <button pButton type="button" label="Record payment" [loading]="busy()" [disabled]="!(pay.amount > 0)" (click)="askSavePayment()"></button>
       </ng-template>
     </p-dialog>
 

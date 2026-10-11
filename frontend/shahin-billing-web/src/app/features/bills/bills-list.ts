@@ -22,6 +22,7 @@ import { ClientsApi, InvoicesApi, saveBlob } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { toIsoDate } from '../../core/gst';
 import { Client, InvoiceListItem } from '../../core/models';
+import { Confirmer } from '../../core/confirmer.service';
 import { Notify } from '../../core/notify.service';
 import { InrPipe } from '../../shared/inr.pipe';
 import { StatusTag } from '../../shared/status-tag';
@@ -50,6 +51,7 @@ export class BillsList implements OnInit {
   private clientsApi = inject(ClientsApi);
   private router = inject(Router);
   private notify = inject(Notify);
+  confirmer = inject(Confirmer);
   private auth = inject(AuthService);
   private confirm = inject(ConfirmationService);
 
@@ -146,6 +148,8 @@ export class BillsList implements OnInit {
     this.payDate = new Date();
     this.statusOpen.set(true);
   }
+
+  askSaveStatus() { this.confirmer.save('the payment status', () => this.saveStatus()); }
 
   saveStatus() {
     const b = this.statusBill()!;

@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ThemeService } from './core/theme.service';
 
 @Component({
   selector: 'app-root',
@@ -12,4 +13,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
     <p-confirmdialog [style]="{ width: '26rem', maxWidth: '94vw' }" />
   `,
 })
-export class App {}
+export class App {
+  /** Created at start-up so the saved colour theme is applied on every page, including login. */
+  private theme = inject(ThemeService);
+}

@@ -5,7 +5,7 @@
       <p>These details print on every bill. Old bills keep the details they were made with.</p>
     </div>
     <div class="actions">
-      <button pButton type="button" label="Save changes" icon="pi pi-check" [loading]="saving()" (click)="save()"></button>
+      <button pButton type="button" label="Save changes" icon="pi pi-check" [loading]="saving()" (click)="confirmSave()"></button>
     </div>
   </div>
 
@@ -15,7 +15,7 @@
   }
 
   @if (biz(); as b) {
-    <form (ngSubmit)="save()" (input)="tick.set(tick() + 1)">
+    <form (ngSubmit)="confirmSave()" (input)="tick.set(tick() + 1)">
       <section class="panel">
         <h2>Business</h2>
         <div class="form-grid">
@@ -121,9 +121,18 @@
 
       <section class="panel">
         <h2>Logo and signature</h2>
+        <div class="field logo-style">
+          <label>Logo shown in the app</label>
+          <p-selectbutton [options]="logoStyles" optionLabel="label" optionValue="value" [(ngModel)]="b.logoStyle" name="logoStyle" [allowEmpty]="false" />
+          <span class="hint">
+            @if (b.logoStyle === 'Themed') { The built-in logo, which changes colour with the colour theme. }
+            @else { Your uploaded image is shown in the app. }
+            Bills always use the image you upload below.
+          </span>
+        </div>
         <div class="form-grid">
           <div class="field">
-            <label>Logo</label>
+            <label>Logo image (for bills)</label>
             <app-image-picker label="Logo" [maxKb]="500" [(value)]="b.logo" (tooLarge)="notify.warn($event)" />
           </div>
           <div class="field">
@@ -171,7 +180,7 @@
         </label>
         <p class="muted small" style="margin: 8px 0 0">
           After the password, a 6-digit code is emailed to your business email above (or your account email if that is empty).
-          It only applies while email is connected on the Email templates screen. You can also sign in with Google if it has been set up.
+          It only applies while email is connected on the Email templates screen.
         </p>
       </section>
 

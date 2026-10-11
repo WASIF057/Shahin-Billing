@@ -5,6 +5,7 @@
       <p>Your products with GST and rates. Give selected clients their own rate with “Special rates”.</p>
     </div>
     <div class="actions">
+      <button pButton type="button" label="Fill from price grid" icon="pi pi-table" [outlined]="true" (click)="openGrid()"></button>
       <button pButton type="button" label="Add item" icon="pi pi-plus" (click)="open()"></button>
     </div>
   </div>
@@ -68,10 +69,80 @@
   </div>
 </div>
 
+<p-dialog header="Fill from price grid" [visible]="gridOpen()" (visibleChange)="gridOpen.set($event)"
+          [modal]="true" [style]="{ width: '860px' }" [breakpoints]="{ '900px': '96vw' }" [draggable]="false">
+  <div class="form-grid">
+    <div class="field span-2">
+      <label for="gtype">Type</label>
+      <p-select inputId="gtype" [options]="types()" optionLabel="name" optionValue="id" [ngModel]="gridType()?.id"
+                (ngModelChange)="gridTypeChanged($event)" placeholder="Select a type" appendTo="body" [fluid]="true" />
+    </div>
+    @if (gridType(); as t) {
+      @if (t.clothTypes.length) {
+        <div class="field">
+          <label for="gcloth">Cloth</label>
+          <p-select inputId="gcloth" [options]="t.clothTypes" [ngModel]="gridCloth()"
+                    (ngModelChange)="gridCloth.set($event); gridColours.set([])" placeholder="Select cloth" appendTo="body" [fluid]="true" />
+        </div>
+        @if (gridColourChoices().length) {
+          <div class="field">
+            <label for="gcol">Colours (one item per colour)</label>
+            <p-multiselect inputId="gcol" [options]="gridColourChoices()" [ngModel]="gridColours()" (ngModelChange)="gridColours.set($event)"
+                           placeholder="Select colours" display="chip" appendTo="body" [fluid]="true" />
+          </div>
+        }
+      }
+      <div class="field">
+        <label for="gunit">Unit</label>
+        <p-select inputId="gunit" [options]="units" [ngModel]="gridUnit()" (ngModelChange)="gridUnit.set($event)" [editable]="true" appendTo="body" [fluid]="true" />
+      </div>
+      <div class="field">
+        <label for="ggst">GST rate</label>
+        <p-select inputId="ggst" [options]="gstRates" optionLabel="label" optionValue="value" [ngModel]="gridGst()"
+                  (ngModelChange)="gridGst.set($event)" appendTo="body" [fluid]="true" />
+      </div>
+    }
+  </div>
+
+  @if (gridType(); as t) {
+    <p class="muted small">Type the rate (before GST) for each size. Leave a box empty to skip that combination. Items that already exist are not duplicated.</p>
+    <div class="grid-wrap">
+      <table class="grid-table">
+        <thead>
+          <tr><th>Size</th>@for (v of gridVariants(); track v) { <th>{{ v || 'Rate' }}</th> }</tr>
+        </thead>
+        <tbody>
+          @for (s of t.sizes; track s; let si = $index) {
+            <tr>
+              <td class="gsize">{{ s }}</td>
+              @for (v of gridVariants(); track v; let vi = $index) {
+                <td>
+                  <p-inputnumber [ngModel]="gridRate(v, s)" (ngModelChange)="setGridRate(v, s, $event)" mode="decimal" [min]="0"
+                                 [maxFractionDigits]="2" [fluid]="true" [inputId]="'grid-' + vi + '-' + si"
+                                 (keydown.enter)="gridEnter($event, vi, si, t.sizes.length)" />
+                </td>
+              }
+            </tr>
+          } @empty {
+            <tr><td [attr.colspan]="gridVariants().length + 1" class="muted small">This type has no sizes yet. Add them in Item setup first.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <ng-template #footer>
+    <span class="muted small grid-count">{{ gridCount() }} item{{ gridCount() === 1 ? '' : 's' }} to create</span>
+    <button pButton type="button" label="Cancel" [text]="true" (click)="confirmer.discard(() => gridOpen.set(false))"></button>
+    <button pButton type="button" label="Create items" icon="pi pi-check" [loading]="gridSaving()"
+            [disabled]="!gridType() || gridCount() === 0" (click)="askSaveGrid()"></button>
+  </ng-template>
+</p-dialog>
+
 <p-dialog [header]="editing().id ? 'Edit item' : 'Add item'" [visible]="dialogOpen()" (visibleChange)="dialogOpen.set($event)"
           [modal]="true" [style]="{ width: '760px' }" [breakpoints]="{ '800px': '96vw' }" [draggable]="false">
   @let it = editing();
-  <form (ngSubmit)="save()" id="itemForm">
+  <form (ngSubmit)="askSave()" id="itemForm">
     <div class="form-grid">
       <div class="field span-2">
         <label for="itype">Type</label>
@@ -134,8 +205,9 @@
       </div>
       <div class="field">
         <label for="irate">Default rate (before GST)</label>
-        <p-inputnumber inputId="irate" name="rate" [(ngModel)]="it.defaultRate" mode="currency" currency="INR"
-                       locale="en-IN" [min]="0" [fluid]="true" />
+        <p-inputnumber inputId="irate" name="rate" [(ngModel)]="it.defaultRate" prefix="₹ " placeholder="₹ 0"
+                       locale="en-IN" [min]="0" [minFractionDigits]="0" [maxFractionDigits]="2" [fluid]="true"
+                       (onFocus)="$any($event).target.select()" />
       </div>
     </div>
 
@@ -155,8 +227,9 @@
         <div class="sr-row">
           <div class="field sr-rate">
             <label [for]="'sr' + i">Rate</label>
-            <p-inputnumber [inputId]="'sr' + i" [name]="'srRate' + i" [(ngModel)]="sr.rate" mode="currency" currency="INR"
-                           locale="en-IN" [min]="0" [fluid]="true" />
+            <p-inputnumber [inputId]="'sr' + i" [name]="'srRate' + i" [(ngModel)]="sr.rate" prefix="₹ " placeholder="₹ 0"
+                           locale="en-IN" [min]="0" [minFractionDigits]="0" [maxFractionDigits]="2" [fluid]="true"
+                           (onFocus)="$any($event).target.select()" />
           </div>
           <div class="field sr-clients">
             <label [for]="'sc' + i">For these clients</label>
@@ -174,7 +247,7 @@
   </form>
 
   <ng-template #footer>
-    <button pButton type="button" label="Cancel" [text]="true" (click)="dialogOpen.set(false)"></button>
+    <button pButton type="button" label="Cancel" [text]="true" (click)="confirmer.discard(() => dialogOpen.set(false))"></button>
     <button pButton type="submit" form="itemForm" [label]="it.id ? 'Save item' : 'Add item'" icon="pi pi-check" [loading]="saving()"></button>
   </ng-template>
 </p-dialog>

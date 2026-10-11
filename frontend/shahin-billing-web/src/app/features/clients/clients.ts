@@ -19,6 +19,7 @@ import { ClientsApi } from '../../core/api.service';
 import { fieldErrors } from '../../core/errors';
 import { isValidGstin, STATES, stateFromGstin, stateName } from '../../core/gst';
 import { Client, ClientSpecialRate, emptyAddress, PortalAccess } from '../../core/models';
+import { Confirmer } from '../../core/confirmer.service';
 import { Notify } from '../../core/notify.service';
 import { InrPipe } from '../../shared/inr.pipe';
 
@@ -48,6 +49,7 @@ const newClient = (): Client => ({
 export class ClientsPage implements OnInit {
   private api = inject(ClientsApi);
   private notify = inject(Notify);
+  confirmer = inject(Confirmer);
   auth = inject(AuthService);
   private confirm = inject(ConfirmationService);
   states = STATES;
@@ -100,6 +102,8 @@ export class ClientsPage implements OnInit {
   }
 
   gstinInvalid(c: Client) { return !!c.gstin && c.gstin.length >= 15 && !isValidGstin(c.gstin); }
+
+  askSave() { this.confirmer.save('this client', () => this.save()); }
 
   save() {
     const c = this.editing();
@@ -192,6 +196,12 @@ export class ClientsPage implements OnInit {
   }
 
   toggleActive(c: Client) {
+    this.confirmer.ask(c.isActive ? 'Hide this client?' : 'Show this client again?',
+      c.isActive ? `${c.name} will be hidden from billing. Old bills are not affected.` : `${c.name} will be available in billing again.`,
+      c.isActive ? 'Yes, hide' : 'Yes, show', () => this.doToggleActive(c));
+  }
+
+  private doToggleActive(c: Client) {
     this.api.setActive(c.id, !c.isActive).subscribe({
       next: () => { this.notify.ok(c.isActive ? 'Client hidden from billing' : 'Client active again'); this.load(); },
       error: e => this.notify.error(e),

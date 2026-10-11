@@ -13,6 +13,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { BillFormatsApi, MiscApi } from '../../core/api.service';
 import { fieldErrors } from '../../core/errors';
 import { TemplateSettings } from '../../core/models';
+import { Confirmer } from '../../core/confirmer.service';
 import { Notify } from '../../core/notify.service';
 
 type ToggleKey = keyof Pick<TemplateSettings, 'showLogo' | 'showHsnColumn' | 'showDiscountColumn' | 'showGstSummary' |
@@ -32,6 +33,7 @@ export class BillFormat implements OnInit, OnDestroy {
   private formatsApi = inject(BillFormatsApi);
   private router = inject(Router);
   private notify = inject(Notify);
+  confirmer = inject(Confirmer);
   private sanitizer = inject(DomSanitizer);
 
   t = signal<TemplateSettings | null>(null);
@@ -102,6 +104,8 @@ export class BillFormat implements OnInit, OnDestroy {
   }
 
   setColor(t: TemplateSettings, c: string) { t.primaryColor = c; this.changed(); }
+
+  askSave() { this.confirmer.save('this bill format', () => this.save()); }
 
   save() {
     const id = this.id();

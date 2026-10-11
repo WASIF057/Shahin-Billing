@@ -6,7 +6,7 @@
 
 .parties { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
 .party { border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 14px 16px; line-height: 1.55;
-         background: linear-gradient(180deg, #fbfdff, #f6f9fd); border-left: 4px solid var(--navy); }
+         background: linear-gradient(180deg, var(--surface), var(--navy-hover)); border-left: 4px solid var(--navy); }
 .party-title { display: flex; justify-content: space-between; align-items: center; gap: 8px;
                font-size: 0.78rem; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
 .same { font-weight: 500; color: var(--ink); }
@@ -21,10 +21,10 @@
 .lines-panel h2 { margin-bottom: 10px; }
 .lines-scroll { overflow-x: auto; margin: 0 -6px 12px; }
 .lines { width: 100%; border-collapse: collapse; min-width: 860px; }
-.lines th { font-size: 0.78rem; font-weight: 700; color: #3d4757; text-align: left; padding: 8px 6px;
-            border-bottom: 1px solid var(--line); background: #f7f9fb; }
+.lines th { font-size: 0.78rem; font-weight: 700; color: var(--label); text-align: left; padding: 8px 6px;
+            border-bottom: 1px solid var(--line); background: var(--navy-hover); }
 .lines th.num { text-align: right; }
-.lines td { padding: 8px 6px; vertical-align: top; border-bottom: 1px solid #edf0f4; }
+.lines td { padding: 8px 6px; vertical-align: top; border-bottom: 1px solid var(--line-soft); }
 .lines td.num { padding-top: 16px; }
 .c-n { width: 28px; padding-top: 16px !important; }
 .c-item { min-width: 260px; }
@@ -56,7 +56,7 @@
 .grand .num { font-size: 1.7rem; color: var(--navy); letter-spacing: -0.01em; }
 .words { font-size: 0.8rem; color: var(--muted); margin: 6px 0 14px; }
 .pos-city { font-weight: 600; padding: 10px 0; }
-.copies { display: flex; flex-direction: column; gap: 6px; margin: 0 0 14px; padding: 12px; border-radius: 10px; background: #f6f9fd; border: 1px solid var(--line); }
+.copies { display: flex; flex-direction: column; gap: 6px; margin: 0 0 14px; padding: 12px; border-radius: 10px; background: var(--navy-hover); border: 1px solid var(--line); }
 .save-actions { display: flex; flex-direction: column; gap: 8px; }
 
 @media (max-width: 1100px) {

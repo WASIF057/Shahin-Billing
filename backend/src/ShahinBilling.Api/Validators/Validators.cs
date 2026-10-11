@@ -72,6 +72,7 @@ public class BusinessValidator : AbstractValidator<Business>
         RuleFor(x => x.Address.StateCode).OptionalStateCode();
         RuleFor(x => x.Email).EmailAddress().When(x => !string.IsNullOrWhiteSpace(x.Email)).WithMessage("Enter a valid email address.");
         RuleFor(x => x.Logo).OptionalImage(Rules.MaxLogoChars, "Logo");
+        RuleFor(x => x.LogoStyle).Must(v => string.IsNullOrEmpty(v) || v == "Themed" || v == "Image").WithMessage("Choose the themed logo or your own image.");
         RuleFor(x => x.Signature).OptionalImage(Rules.MaxSignatureChars, "Signature");
         RuleFor(x => x.Bank.Ifsc).Matches("^[A-Z]{4}0[A-Z0-9]{6}$").When(x => !string.IsNullOrWhiteSpace(x.Bank.Ifsc))
             .WithMessage("IFSC should look like HDFC0001234.");
@@ -125,6 +126,7 @@ public class ProductTypeValidator : AbstractValidator<ProductType>
     public ProductTypeValidator()
     {
         RuleFor(x => x.Name).NotEmpty().MaximumLength(40).WithMessage("Enter the type name (for example Bed or Pillow).");
+        RuleFor(x => x.Category).MaximumLength(60);
         RuleFor(x => x.Sizes).Must(l => l == null || l.Count <= 200).WithMessage("Too many sizes.");
         RuleFor(x => x.Variants).Must(l => l == null || l.Count <= 200).WithMessage("Too many variants.");
         RuleFor(x => x.ClothTypes).Must(l => l == null || l.Count <= 50).WithMessage("Too many cloth types.");

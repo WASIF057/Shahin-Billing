@@ -125,10 +125,19 @@
                 <tr>
                   <td class="c-n muted">{{ i + 1 }}</td>
                   <td class="c-item" [id]="'line-item-' + i">
-                    <p-select [options]="itemOptions()" optionLabel="label" optionValue="id" [(ngModel)]="l.itemId"
-                              (onChange)="itemChanged(l)" [filter]="true" filterBy="label"
-                              filterPlaceholder="Search items" placeholder="Search and select an item" [fluid]="true"
-                              appendTo="body" emptyMessage="No items yet. Add them on the Items screen." />
+                    <p-select #sel [options]="visibleItems()" optionLabel="label" optionValue="id" [(ngModel)]="l.itemId"
+                              (onChange)="itemChanged(l)" (onShow)="focusItemSearch()" (onHide)="itemQuery.set('')"
+                              placeholder="Search and select an item" [fluid]="true" appendTo="body"
+                              [emptyMessage]="itemQuery() ? 'No item has all of those words.' : 'No items yet. Add them on the Items screen.'">
+                      <ng-template #header>
+                        <div class="item-search">
+                          <input pInputText type="text" class="item-search-input" autocomplete="off"
+                                 placeholder="Type any words, e.g. box blue 3ft" [ngModel]="itemQuery()" (ngModelChange)="itemQuery.set($event)"
+                                 (keydown)="$event.stopPropagation()" (keydown.enter)="pickFirstItem(l, sel, $event)" />
+                          <span class="hint">Any words, in any order. Enter picks the first one.</span>
+                        </div>
+                      </ng-template>
+                    </p-select>
                     @if (l.itemId) {
                       <div class="line-meta">
                         {{ l.unit }}
@@ -241,15 +250,15 @@
           <button pButton type="button" label="View bill" icon="pi pi-eye" [fluid]="true" severity="secondary" [outlined]="true"
                   [loading]="previewing()" [disabled]="!!saving()" (click)="viewBill()"></button>
           <button pButton type="button" label="Save & download PDF" icon="pi pi-download" [fluid]="true"
-                  [loading]="saving() === 'pdf'" [disabled]="!!saving()" (click)="save('pdf')"></button>
+                  [loading]="saving() === 'pdf'" [disabled]="!!saving()" (click)="askSave('pdf')"></button>
           <button pButton type="button" label="Save & finalize" icon="pi pi-check" [fluid]="true" [outlined]="true"
-                  [loading]="saving() === 'final'" [disabled]="!!saving()" (click)="save('final')"></button>
+                  [loading]="saving() === 'final'" [disabled]="!!saving()" (click)="askSave('final')"></button>
           @if (!existing() || existing()!.status === 'Draft') {
             <button pButton type="button" label="Save draft" [text]="true" [fluid]="true"
-                    [loading]="saving() === 'draft'" [disabled]="!!saving()" (click)="save('draft')"></button>
+                    [loading]="saving() === 'draft'" [disabled]="!!saving()" (click)="askSave('draft')"></button>
           }
           <button pButton type="button" label="Cancel" icon="pi pi-times" [fluid]="true" severity="secondary" [text]="true"
-                  [disabled]="!!saving()" (click)="cancel()"></button>
+                  [disabled]="!!saving()" (click)="askCancel()"></button>
         </div>
       </div>
     </aside>

@@ -34,5 +34,3 @@ public class ResetPasswordRequest
     public string Code { get; set; } = "";
     public string NewPassword { get; set; } = "";
 }
-public class GoogleLoginRequest { public string IdToken { get; set; } = ""; }
-public record AuthConfig(string? GoogleClientId);

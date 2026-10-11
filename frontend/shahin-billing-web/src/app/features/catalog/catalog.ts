@@ -2,7 +2,6 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
-import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
@@ -12,9 +11,11 @@ import { TooltipModule } from 'primeng/tooltip';
 import { CatalogApi } from '../../core/api.service';
 import { fieldErrors } from '../../core/errors';
 import { ProductType } from '../../core/models';
+import { Confirmer } from '../../core/confirmer.service';
 import { Notify } from '../../core/notify.service';
+import { ChipList } from '../../shared/chip-list';
 
-const newType = (): ProductType => ({ id: '', name: '', usesVariants: false, variants: [], clothTypes: [], clothColours: [], sizes: [] });
+const newType = (): ProductType => ({ id: '', name: '', category: '', usesVariants: false, variants: [], clothTypes: [], clothColours: [], sizes: [] });
 
 /**
  * Item setup: define the types (Bed, Pillow, Cushion, Bolster...) once, with the item names, sizes and (for
@@ -22,7 +23,7 @@ const newType = (): ProductType => ({ id: '', name: '', usesVariants: false, var
  */
 @Component({
   selector: 'app-catalog',
-  imports: [FormsModule, RouterLink, AutoCompleteModule, ButtonModule, DialogModule, InputTextModule, TableModule,
+  imports: [FormsModule, RouterLink, ChipList, ButtonModule, DialogModule, InputTextModule, TableModule,
             ToggleSwitchModule, TooltipModule],
   template: `
     <div class="page">
@@ -44,7 +45,7 @@ const newType = (): ProductType => ({ id: '', name: '', usesVariants: false, var
           </ng-template>
           <ng-template #body let-t>
             <tr>
-              <td class="type-name">{{ t.name }}</td>
+              <td class="type-name">{{ t.name }} @if (t.category) { <div class="muted small">{{ t.category }}</div> }</td>
               <td>
                 @if (t.usesVariants) {
                   <div class="chips">@for (x of t.variants; track x) { <span class="chip">{{ x }}</span> } @empty { <span class="muted small">None yet</span> }</div>
@@ -80,11 +81,17 @@ const newType = (): ProductType => ({ id: '', name: '', usesVariants: false, var
     <p-dialog [header]="editing().id ? 'Edit type' : 'Add type'" [visible]="dialogOpen()" (visibleChange)="dialogOpen.set($event)"
               [modal]="true" [style]="{ width: '640px' }" [breakpoints]="{ '700px': '96vw' }" [draggable]="false">
       @let t = editing();
-      <form (ngSubmit)="save()" (keydown.enter)="keepOpenOnEnter($event)" id="typeForm" class="form">
+      <form (ngSubmit)="askSave()" (keydown.enter)="keepOpenOnEnter($event)" id="typeForm" class="form">
         <div class="field">
           <label for="tname">Type name</label>
           <input pInputText id="tname" name="name" [(ngModel)]="t.name" required placeholder="Bed, Pillow, Cushion, Bolster" />
           @if (errors()['name']) { <span class="error">{{ errors()['name'] }}</span> }
+        </div>
+
+        <div class="field">
+          <label for="tcat">Group (optional)</label>
+          <input pInputText id="tcat" name="category" [(ngModel)]="t.category" placeholder="Pillows and Cushions" />
+          <span class="hint">Types with the same group name are listed together, like the headings on your price list.</span>
         </div>
 
         <label class="row"><p-toggleswitch [(ngModel)]="t.usesVariants" name="usesVariants" /> <span>This type has variants (like Sada, Quilt)</span></label>
@@ -92,16 +99,14 @@ const newType = (): ProductType => ({ id: '', name: '', usesVariants: false, var
         @if (t.usesVariants) {
           <div class="field">
             <label for="tvars">Variants</label>
-            <p-autocomplete inputId="tvars" name="variants" [(ngModel)]="t.variants" [multiple]="true" [typeahead]="false"
-                            [addOnBlur]="true" placeholder="Type a variant and press Enter" [fluid]="true" />
-            <span class="hint">For example Sada, Quilt.</span>
+            <app-chip-list inputId="tvars" [(items)]="t.variants" placeholder="Type a variant and press Enter" />
+            <span class="hint">For example Sada, Quilt. Use the ‹ › arrows or drag a chip to change the order.</span>
           </div>
         }
 
         <div class="field">
           <label for="tcloth">Cloth types</label>
-          <p-autocomplete inputId="tcloth" name="clothTypes" [(ngModel)]="t.clothTypes" [multiple]="true" [typeahead]="false"
-                          [addOnBlur]="true" placeholder="Type a cloth type and press Enter" [fluid]="true" />
+          <app-chip-list inputId="tcloth" [(items)]="t.clothTypes" placeholder="Type a cloth type and press Enter" />
           <span class="hint">For example Cotton, Polyester. Leave empty if this type has no cloth choice.</span>
         </div>
 
@@ -111,8 +116,8 @@ const newType = (): ProductType => ({ id: '', name: '', usesVariants: false, var
             @for (c of t.clothTypes; track c) {
               <div class="field">
                 <label [for]="'col-' + c">{{ c }} colours</label>
-                <p-autocomplete [inputId]="'col-' + c" [name]="'colours-' + c" [ngModel]="coloursOf(t, c)" (ngModelChange)="setColours(t, c, $event)"
-                                [multiple]="true" [typeahead]="false" [addOnBlur]="true" [placeholder]="'Type a ' + c + ' colour and press Enter'" [fluid]="true" />
+                <app-chip-list [inputId]="'col-' + c" [items]="coloursOf(t, c)" (itemsChange)="setColours(t, c, $event)"
+                               [placeholder]="'Type a ' + c + ' colour and press Enter'" />
               </div>
             }
             <span class="hint">Each cloth has its own colours (Polyester can have colours that Cotton doesn’t). Leave a cloth empty if it has no colour choice.</span>
@@ -121,14 +126,13 @@ const newType = (): ProductType => ({ id: '', name: '', usesVariants: false, var
 
         <div class="field">
           <label for="tsizes">Sizes</label>
-          <p-autocomplete inputId="tsizes" name="sizes" [(ngModel)]="t.sizes" [multiple]="true" [typeahead]="false"
-                          [addOnBlur]="true" placeholder="Type a size and press Enter" [fluid]="true" />
-          <span class="hint">For example 72x36x6 in, or Small, Medium, Large.</span>
+          <app-chip-list inputId="tsizes" [(items)]="t.sizes" placeholder="Type a size and press Enter" />
+          <span class="hint">For example 72x36x6 in, or Small, Medium, Large. Use the ‹ › arrows or drag a chip to change the order.</span>
         </div>
       </form>
 
       <ng-template #footer>
-        <button pButton type="button" label="Cancel" [text]="true" (click)="dialogOpen.set(false)"></button>
+        <button pButton type="button" label="Cancel" [text]="true" (click)="confirmer.discard(() => dialogOpen.set(false))"></button>
         <button pButton type="submit" form="typeForm" [label]="t.id ? 'Save type' : 'Add type'" icon="pi pi-check" [loading]="saving()"></button>
       </ng-template>
     </p-dialog>
@@ -148,6 +152,7 @@ const newType = (): ProductType => ({ id: '', name: '', usesVariants: false, var
 export class CatalogPage implements OnInit {
   private api = inject(CatalogApi);
   private notify = inject(Notify);
+  confirmer = inject(Confirmer);
   private confirm = inject(ConfirmationService);
 
   types = signal<ProductType[]>([]);
@@ -170,15 +175,17 @@ export class CatalogPage implements OnInit {
   open(t?: ProductType) {
     this.errors.set({});
     const copy = t ? structuredClone(t) : newType();
+    copy.category ??= '';
     copy.clothTypes ??= [];
     copy.clothColours ??= [];
     this.editing.set(copy);
     this.dialogOpen.set(true);
   }
 
-  /** Enter inside a chip box adds a chip. It must not also submit the form, which would save and close the dialog. */
+  /** Enter in any box (type name, group, or a chip box that adds a chip) must not submit the form.
+   *  Only the Save button saves and closes the dialog. */
   keepOpenOnEnter(e: Event) {
-    if ((e.target as HTMLElement | null)?.closest('p-autocomplete')) e.preventDefault();
+    if ((e.target as HTMLElement | null)?.tagName === 'INPUT') e.preventDefault();
   }
 
   /** The colours box for one cloth. Every cloth gets its own list (made here if it has none yet), so each box has a stable list of its own.
@@ -199,6 +206,8 @@ export class CatalogPage implements OnInit {
     const c = t.clothColours?.find(x => x.cloth.toLowerCase() === cloth.toLowerCase())?.colours ?? [];
     return c.length ? c.join(', ') : 'no colours';
   }
+
+  askSave() { this.confirmer.save('this type', () => this.save()); }
 
   save() {
     const t = this.editing();

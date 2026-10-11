@@ -173,6 +173,7 @@ public class ImportService(MongoContext db, ClientService clients, ItemService i
     /// <summary>A typed value must be one of the type's choices (matched ignoring capitals; the stored spelling is used). Empty is fine.</summary>
     public static string Pick(string value, IReadOnlyList<string>? options, string label, string typeName, string noneAllowedMessage)
     {
+        value = ShahinBilling.Api.Helpers.TextClean.Plain(value);
         if (value.Length == 0) return "";
         if (options == null) throw new AppException(noneAllowedMessage + " Leave the " + label + " empty.");
         return options.FirstOrDefault(o => o.Equals(value, StringComparison.OrdinalIgnoreCase))

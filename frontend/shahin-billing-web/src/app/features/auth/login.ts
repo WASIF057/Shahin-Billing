@@ -1,48 +1,59 @@
-import { Component, inject, NgZone, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, inject, OnDestroy, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { MessageModule } from 'primeng/message';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
+import { AppLogo } from '../../shared/app-logo';
 import { AuthService } from '../../core/auth.service';
 import { errorMessage } from '../../core/errors';
 
-/** Minimal shape of Google's sign-in script (loaded only when a Google client id is configured). */
-interface GoogleId {
-  accounts: { id: {
-    initialize(o: { client_id: string; callback: (r: { credential: string }) => void }): void;
-    renderButton(el: HTMLElement, o: Record<string, unknown>): void;
-  } };
-}
-
 @Component({
   selector: 'app-login',
-  imports: [FormsModule, RouterLink, ButtonModule, InputTextModule, PasswordModule, MessageModule],
+  imports: [FormsModule, RouterLink, ButtonModule, InputTextModule, PasswordModule, MessageModule, IconFieldModule, InputIconModule, AppLogo],
   styleUrl: './auth.scss',
   template: `
     <div class="wrap">
       <section class="side">
-        <div class="brand"><span class="mark" aria-hidden="true"></span> Shahin Billing</div>
-        <div>
-          <h1>Bills in seconds, not in a bill book.</h1>
-          <p>Pick a client, pick your items. Rates, GST and totals fill in by themselves, and the PDF is ready to send.</p>
+        <div class="brand-logo"><app-logo /></div>
+        <div class="pitch">
+          <span class="eyebrow">GST billing software</span>
+          <h1>Smart GST billing for your business.</h1>
+          <p>Create accurate tax invoices, manage your clients and track every payment from one secure place.</p>
           <ul class="perks">
-            <li><i class="pi pi-bolt"></i> Rates and GST fill in automatically</li>
+            <li><i class="pi pi-calculator"></i> Accurate GST on every invoice</li>
             <li><i class="pi pi-file-pdf"></i> Professional PDF tax invoices</li>
-            <li><i class="pi pi-envelope"></i> Bills emailed to you and your client</li>
+            <li><i class="pi pi-wallet"></i> Payment tracking and reminders</li>
           </ul>
+          <div class="mock" aria-hidden="true">
+            <div class="mock-head"><b>TAX INVOICE</b><span>INV-0042</span></div>
+            <div class="mock-row"><span class="w60"></span><span class="w20"></span></div>
+            <div class="mock-row"><span class="w50"></span><span class="w20"></span></div>
+            <div class="mock-row"><span class="w40"></span><span class="w20"></span></div>
+            <div class="mock-total"><span>Grand total</span><b>&#8377; 24,780.00</b></div>
+            <span class="mock-badge"><i class="pi pi-check"></i> Paid</span>
+          </div>
         </div>
-        <small>GST tax invoices for B2B sales</small>
+        <small>&copy; {{ year }} Shahin Billing &middot; Secure and private</small>
       </section>
       <section class="form-side">
         @if (!challengeId()) {
           <form (ngSubmit)="submit()" #f="ngForm">
-            <h2>Log in</h2>
+            <div class="form-head">
+              <span class="form-icon"><i class="pi pi-lock"></i></span>
+              <h2>Welcome back</h2>
+              <p>Log in to continue to your billing dashboard.</p>
+            </div>
             @if (error()) { <p-message severity="error" [text]="error()!" /> }
             <div class="field">
               <label for="email">Email</label>
-              <input pInputText id="email" name="email" type="email" [(ngModel)]="email" required autocomplete="username" />
+              <p-iconfield>
+                <p-inputicon class="pi pi-envelope" />
+                <input pInputText id="email" name="email" type="email" [(ngModel)]="email" required autocomplete="username" placeholder="you@company.com" />
+              </p-iconfield>
             </div>
             <div class="field">
               <label for="password">Password</label>
@@ -52,16 +63,12 @@ interface GoogleId {
             </div>
             <button pButton type="submit" label="Log in" [loading]="busy()" [disabled]="f.invalid"></button>
 
-            @if (googleOn()) {
-              <div class="divider"><span>or</span></div>
-              <div id="google-btn" class="google-wrap"></div>
-            }
             <p class="alt">New here? <a routerLink="/register">Create an account</a></p>
           </form>
         } @else {
           <!-- Step 2: the 6-digit code we emailed -->
           <form (ngSubmit)="verify()">
-            <h2>Enter your code</h2>
+            <div class="form-head"><span class="form-icon"><i class="pi pi-shield"></i></span><h2>Enter your code</h2></div>
             <p class="muted" style="margin: 0">We emailed a 6-digit code to <strong>{{ masked() }}</strong>. It works for 10 minutes.</p>
             @if (error()) { <p-message severity="error" [text]="error()!" /> }
             <input pInputText class="code" name="code" [ngModel]="code" (ngModelChange)="onCode($event)" maxlength="6"
@@ -80,11 +87,11 @@ interface GoogleId {
     </div>
   `,
 })
-export class Login implements OnInit, OnDestroy {
+export class Login implements OnDestroy {
   private auth = inject(AuthService);
   private router = inject(Router);
-  private zone = inject(NgZone);
 
+  year = new Date().getFullYear();
   email = '';
   password = '';
   code = '';
@@ -96,17 +103,6 @@ export class Login implements OnInit, OnDestroy {
   masked = signal('');
   cooldown = signal(0);
   private timer: ReturnType<typeof setInterval> | null = null;
-
-  // Google
-  googleOn = signal(false);
-
-  ngOnInit() {
-    // The Google button appears only when the server has a Google client id
-    this.auth.config().subscribe({
-      next: c => { if (c.googleClientId) { this.googleOn.set(true); setTimeout(() => this.loadGoogle(c.googleClientId!), 0); } },
-      error: () => {},
-    });
-  }
 
   submit() {
     this.busy.set(true);
@@ -161,35 +157,6 @@ export class Login implements OnInit, OnDestroy {
     }, 1000);
   }
   private stopTimer() { if (this.timer) { clearInterval(this.timer); this.timer = null; } }
-
-  // ---- Google sign-in ----
-  private loadGoogle(clientId: string) {
-    const w = window as unknown as { google?: GoogleId };
-    const init = () => {
-      const el = document.getElementById('google-btn');
-      if (!w.google || !el) return;
-      w.google.accounts.id.initialize({
-        client_id: clientId,
-        callback: r => this.zone.run(() => this.googleSignIn(r.credential)),
-      });
-      w.google.accounts.id.renderButton(el, { theme: 'outline', size: 'large', width: 340, text: 'signin_with', shape: 'pill' });
-    };
-    if (w.google) { init(); return; }
-    const s = document.createElement('script');
-    s.src = 'https://accounts.google.com/gsi/client';
-    s.async = true;
-    s.onload = init;
-    document.head.appendChild(s);
-  }
-
-  private googleSignIn(credential: string) {
-    this.busy.set(true);
-    this.error.set(null);
-    this.auth.googleLogin(credential).subscribe({
-      next: () => this.router.navigate(['/']),
-      error: e => { this.error.set(errorMessage(e)); this.busy.set(false); },
-    });
-  }
 
   ngOnDestroy() { this.stopTimer(); }
 }

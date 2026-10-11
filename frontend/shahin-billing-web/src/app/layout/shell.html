@@ -1,28 +1,43 @@
-<div class="shell" [class.menu-open]="menuOpen()">
+<div class="shell" [class.menu-open]="menuOpen()" [class.collapsed]="collapsed()">
   <aside class="sidebar">
     <div class="brand">
-      <span class="mark" aria-hidden="true"></span>
+      @if (brand.logo() && brand.style() !== 'Themed') {
+        <span class="mark logo"><img [src]="brand.logo()" alt="" /></span>
       <div>
-        <div class="brand-name">{{ auth.user()?.businessName || 'Billing' }}</div>
-        <div class="brand-sub">{{ auth.isClient() ? 'Ordering' : 'GST billing' }}</div>
-      </div>
+          <div class="brand-name">{{ auth.user()?.businessName || 'Billing' }}</div>
+          <div class="brand-sub">{{ auth.isClient() ? 'Ordering' : 'GST billing' }}</div>
+        </div>
+      } @else if (brand.loaded() || auth.isClient()) {
+        <!-- No uploaded logo: the built-in logo, which follows the colour theme -->
+        <div class="logo-card">
+          <app-logo class="logo-full" variant="full" />
+          <app-logo class="logo-icon" variant="icon" />
+        </div>
+      }
     </div>
 
     @if (auth.isClient()) {
-      <a class="new-bill" routerLink="/portal" (click)="menuOpen.set(false)"><i class="pi pi-shopping-cart"></i> Order products</a>
+      <a class="new-bill" routerLink="/portal" (click)="menuOpen.set(false)"><i class="pi pi-shopping-cart"></i> <span class="lbl">Order products</span></a>
     } @else {
-      <a class="new-bill" routerLink="/bills/new" (click)="menuOpen.set(false)"><i class="pi pi-plus"></i> Create bill</a>
+      <a class="new-bill" routerLink="/bills/new" (click)="menuOpen.set(false)"><i class="pi pi-plus"></i> <span class="lbl">Create bill</span></a>
     }
 
     <nav>
-      @for (l of links(); track l.path) {
-        <a [routerLink]="l.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: !!l.exact }"
-           (click)="menuOpen.set(false)">
-          <i [class]="l.icon"></i><span>{{ l.label }}</span>
-          @if (l.badge && badge.count() > 0) { <span class="badge">{{ badge.count() }}</span> }
-        </a>
+      @for (g of groups(); track g.label) {
+        @if (g.label) { <div class="nav-group">{{ g.label }}</div> }
+        @for (l of g.links; track l.path) {
+          <a [routerLink]="l.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: !!l.exact }"
+             (click)="menuOpen.set(false)" [attr.title]="collapsed() ? l.label : null">
+            <i [class]="l.icon"></i><span class="lbl">{{ l.label }}</span>
+            @if (l.badge && badge.count() > 0) { <span class="badge">{{ badge.count() }}</span> }
+          </a>
+        }
       }
     </nav>
+    <button type="button" class="collapse-btn" (click)="toggleCollapsed()" [attr.aria-label]="collapsed() ? 'Expand menu' : 'Collapse menu'">
+      <i class="pi" [class.pi-angle-double-left]="!collapsed()" [class.pi-angle-double-right]="collapsed()"></i>
+      <span class="lbl">Collapse menu</span>
+    </button>
 
     <div class="me">
       <div class="me-name">{{ auth.user()?.name }}</div>
@@ -37,6 +52,38 @@
           @if (alerts.desktop() === 'default') { <button type="button" (click)="alerts.enableDesktop()">Desktop alerts</button> }
         </div>
       }
+      <button type="button" class="acct theme-btn" (click)="themeOpen.set(!themeOpen())" [attr.aria-expanded]="themeOpen()">
+        <i class="pi pi-palette"></i> {{ theme.canEdit() ? 'Colour theme' : 'Appearance' }}
+        <span class="dot" [style.background]="theme.primary()"></span>
+      </button>
+      @if (themeOpen()) {
+        <div class="theme-panel" role="dialog" aria-label="Colour theme">
+          <div class="tp-head"><strong>{{ theme.canEdit() ? 'Colour theme' : 'Appearance' }}</strong>
+            <button type="button" class="tp-x" (click)="themeOpen.set(false)" aria-label="Close">×</button></div>
+          <div class="modes" role="group" aria-label="Light or dark">
+            <button type="button" [class.on]="theme.mode() === 'light'" (click)="theme.setMode('light')"><i class="pi pi-sun"></i> Light</button>
+            <button type="button" [class.on]="theme.mode() === 'dark'" (click)="theme.setMode('dark')"><i class="pi pi-moon"></i> Dark</button>
+            <button type="button" [class.on]="theme.mode() === 'auto'" (click)="theme.setMode('auto')"><i class="pi pi-desktop"></i> Auto</button>
+          </div>
+          @if (theme.canEdit()) {
+          <div class="swatches">
+            @for (t of theme.themes; track t.id) {
+              <button type="button" class="sw" [class.on]="theme.isActive(t)" (click)="theme.choose(t)" [attr.aria-label]="t.name" [title]="t.name">
+                <span class="sw-a" [style.background]="t.primary"></span><span class="sw-b" [style.background]="t.accent"></span>
+                <span class="sw-n">{{ t.name }}</span>
+              </button>
+            }
+          </div>
+          <div class="custom">
+            <label>Main colour <input type="color" [value]="theme.primary()" (input)="theme.setPrimary(colourOf($event))" /></label>
+            <label>Highlight <input type="color" [value]="theme.accent()" (input)="theme.setAccent(colourOf($event))" /></label>
+          </div>
+          <div class="tp-foot"><span>Colours are saved for everyone in your business.</span><button type="button" (click)="theme.reset()">Reset</button></div>
+          } @else {
+            <p class="tp-note">Light or dark is your own choice. The colours are set by the owner.</p>
+          }
+        </div>
+      }
       <a class="acct" routerLink="/account" routerLinkActive="on" (click)="menuOpen.set(false)"><i class="pi pi-user"></i> My account</a>
       <button pButton type="button" label="Log out" icon="pi pi-sign-out" [text]="true" size="small"
               class="logout" (click)="auth.logout()"></button>
@@ -47,9 +94,23 @@
 
   <div class="main">
     <header class="topbar">
-      <button pButton type="button" icon="pi pi-bars" [text]="true" aria-label="Open menu"
+      <button pButton type="button" icon="pi pi-bars" [text]="true" aria-label="Open menu" class="menu-btn"
               (click)="menuOpen.set(true)"></button>
+      <div class="hello" [class.tucked]="onDashboard() && !scrolled()">
+        <div class="hello-main">{{ greeting() }}, {{ firstName() }}</div>
+        <div class="hello-sub">{{ today() }}</div>
+      </div>
       <span class="top-title">{{ auth.user()?.businessName }}</span>
+      <div class="top-actions">
+        <button type="button" class="icon-btn" (click)="theme.setMode(theme.isDark() ? 'light' : 'dark')"
+                [attr.aria-label]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'" [title]="theme.isDark() ? 'Light mode' : 'Dark mode'">
+          <i class="pi" [class.pi-moon]="!theme.isDark()" [class.pi-sun]="theme.isDark()"></i>
+        </button>
+        @if (!auth.isClient()) {
+          <a class="top-cta" routerLink="/bills/new"><i class="pi pi-plus"></i> <span>Create bill</span></a>
+        }
+        <a class="avatar" routerLink="/account" [title]="auth.user()?.name || ''">{{ initials() }}</a>
+      </div>
     </header>
     <main>
       <router-outlet />

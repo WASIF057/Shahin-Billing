@@ -28,7 +28,7 @@ import { ButtonModule } from 'primeng/button';
   styles: `
     .picker { display: flex; flex-direction: column; gap: 8px; }
     .preview { border: 1px dashed var(--line); border-radius: var(--radius-sm); display: flex;
-               align-items: center; justify-content: center; background: #fafbfc; padding: 6px; }
+               align-items: center; justify-content: center; background: var(--input-bg); padding: 6px; }
     .preview img { max-height: 100%; max-width: 100%; object-fit: contain; }
     .upload { cursor: pointer; }
   `,

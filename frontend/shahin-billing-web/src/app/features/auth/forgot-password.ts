@@ -5,6 +5,7 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { MessageModule } from 'primeng/message';
+import { AppLogo } from '../../shared/app-logo';
 import { AuthService } from '../../core/auth.service';
 import { errorMessage } from '../../core/errors';
 import { Notify } from '../../core/notify.service';
@@ -12,12 +13,12 @@ import { Notify } from '../../core/notify.service';
 /** Forgot password: 1) enter your email, 2) type the 6-digit code we emailed and choose a new password. */
 @Component({
   selector: 'app-forgot-password',
-  imports: [FormsModule, RouterLink, ButtonModule, InputTextModule, PasswordModule, MessageModule],
+  imports: [FormsModule, RouterLink, ButtonModule, InputTextModule, PasswordModule, MessageModule, AppLogo],
   styleUrl: './auth.scss',
   template: `
     <div class="wrap">
       <section class="side">
-        <div class="brand"><span class="mark" aria-hidden="true"></span> Shahin Billing</div>
+        <div class="brand-logo"><app-logo /></div>
         <div>
           <h1>Forgot your password?</h1>
           <p>No problem. We’ll email a 6-digit code to your business email, and you can choose a new password.</p>

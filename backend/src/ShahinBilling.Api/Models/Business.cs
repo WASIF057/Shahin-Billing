@@ -4,6 +4,8 @@ public class Business : Entity
 {
     public string Name { get; set; } = "";
     public string Logo { get; set; } = "";            // data URL (png/jpg), max ~500 KB
+    /// <summary>What the app shows as its logo: "Themed" (the built-in logo in the theme colours) or "Image" (the uploaded Logo). Empty = Image when a logo is uploaded, otherwise Themed. Bills always use the uploaded Logo.</summary>
+    public string LogoStyle { get; set; } = "";
     public Address Address { get; set; } = new();
     public string Phone { get; set; } = "";
     public string AlternatePhone { get; set; } = "";
@@ -24,4 +26,12 @@ public class Business : Entity
     /// <summary>Ask for an emailed 6-digit code when logging in (only while email is set up).</summary>
     public bool RequireLoginOtp { get; set; } = true;
     public ReminderSettings Reminders { get; set; } = new();
+    /// <summary>The colours the owner chose for the app. Everyone in the business sees them. Empty = the default look.</summary>
+    public UiTheme Theme { get; set; } = new();
+}
+
+public class UiTheme
+{
+    public string Primary { get; set; } = "";   // #rrggbb
+    public string Accent { get; set; } = "";    // #rrggbb
 }

@@ -4,6 +4,8 @@ namespace ShahinBilling.Api.Models;
 public class ProductType : BusinessEntity
 {
     public string Name { get; set; } = "";
+    /// <summary>Optional heading that groups types together (e.g. "Pillows and Cushions"). Empty = no group.</summary>
+    public string Category { get; set; } = "";
     /// <summary>true = items of this type also pick a variant (e.g. Sada, Quilt). Only some types need it.</summary>
     public bool UsesVariants { get; set; }
     public List<string> Variants { get; set; } = new();

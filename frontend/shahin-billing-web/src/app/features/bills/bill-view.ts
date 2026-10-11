@@ -17,6 +17,7 @@ import { InvoicesApi, openBlob, saveBlob } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { toIsoDate } from '../../core/gst';
 import { Invoice } from '../../core/models';
+import { Confirmer } from '../../core/confirmer.service';
 import { Notify } from '../../core/notify.service';
 import { InrPipe } from '../../shared/inr.pipe';
 import { StatusTag } from '../../shared/status-tag';
@@ -34,6 +35,7 @@ export class BillView implements OnInit {
   private router = inject(Router);
   private confirm = inject(ConfirmationService);
   private notify = inject(Notify);
+  confirmer = inject(Confirmer);
   auth = inject(AuthService);
 
   inv = signal<Invoice | null>(null);
@@ -70,6 +72,8 @@ export class BillView implements OnInit {
     this.api.pdf(this.inv()!.id, this.selectedCopies()).subscribe({ next: b => openBlob(b), error: e => this.notify.error(e) });
   }
 
+  askFinalize() { this.confirmer.ask('Finalize this bill?', 'Once finalized the bill is final. You can still cancel it later if needed.', 'Yes, finalize', () => this.finalize()); }
+
   finalize() {
     this.api.finalize(this.inv()!.id).subscribe({
       next: i => { this.inv.set(i); this.notify.ok('Bill finalized'); }, error: e => this.notify.error(e),
@@ -88,6 +92,8 @@ export class BillView implements OnInit {
     this.pay = { date: new Date(), amount: Math.max(i.balanceDue, 0), mode: 'Bank Transfer', reference: '', note: '' };
     this.payOpen.set(true);
   }
+
+  askSavePayment() { this.confirmer.save('this payment', () => this.savePayment()); }
 
   savePayment() {
     this.busy.set(true);

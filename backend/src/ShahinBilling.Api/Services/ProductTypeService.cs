@@ -9,7 +9,7 @@ namespace ShahinBilling.Api.Services;
 public class ProductTypeService(MongoContext db)
 {
     public async Task<List<ProductType>> ListAsync(string businessId) =>
-        await db.ProductTypes.Find(x => x.BusinessId == businessId).SortBy(x => x.Name).ToListAsync();
+        await db.ProductTypes.Find(x => x.BusinessId == businessId).SortBy(x => x.Category).ThenBy(x => x.Name).ToListAsync();
 
     public async Task<ProductType> GetAsync(string businessId, string id) =>
         await db.ProductTypes.Find(x => x.BusinessId == businessId && x.Id == id).FirstOrDefaultAsync()
@@ -54,6 +54,7 @@ public class ProductTypeService(MongoContext db)
     private async Task Normalize(string businessId, ProductType t)
     {
         t.Name = t.Name.Trim();
+        t.Category = (t.Category ?? "").Trim();
         t.Sizes = Clean(t.Sizes);
         t.ClothTypes = Clean(t.ClothTypes);
         t.ClothColours = CleanColourSets(t.ClothTypes, t.ClothColours);
@@ -79,5 +80,5 @@ public class ProductTypeService(MongoContext db)
     }
 
     private static List<string> Clean(List<string>? list) =>
-        (list ?? new()).Select(x => x.Trim()).Where(x => x.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        (list ?? new()).Select(x => Helpers.TextClean.Plain(x)).Where(x => x.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 }

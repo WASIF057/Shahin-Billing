@@ -25,6 +25,7 @@ public class BusinessService(MongoContext db)
         input.Template ??= existing.Template;
         input.EmailSettings = existing.EmailSettings ?? new EmailSettings();   // only the Email screen changes this
         input.Reminders = existing.Reminders ?? new ReminderSettings();         // ...and this
+        input.Theme = existing.Theme ?? new UiTheme();                           // ...and the colour theme (own endpoint)
         await db.Businesses.ReplaceOneAsync(b => b.Id == businessId, input);
         return input;
     }
@@ -35,6 +36,14 @@ public class BusinessService(MongoContext db)
         await db.Businesses.UpdateOneAsync(b => b.Id == businessId,
             Builders<Business>.Update.Set(b => b.Template, template).Set(b => b.UpdatedAt, DateTime.UtcNow));
         return template;
+    }
+
+    public async Task<UiTheme> UpdateThemeAsync(string businessId, UiTheme theme)
+    {
+        await GetAsync(businessId);
+        await db.Businesses.UpdateOneAsync(b => b.Id == businessId,
+            Builders<Business>.Update.Set(b => b.Theme, theme).Set(b => b.UpdatedAt, DateTime.UtcNow));
+        return theme;
     }
 
     public async Task<EmailSettings> UpdateEmailSettingsAsync(string businessId, EmailSettings settings)

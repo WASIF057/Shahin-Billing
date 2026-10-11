@@ -17,6 +17,7 @@ import {
   amountInWords, calculate, CalcLine, fromApiDate, isInterState, resolveRate, STATES, stateName, toIsoDate,
 } from '../../core/gst';
 import { Business, Client, emptyAddress, Invoice, InvoiceRequest, Item, Order, PartySnapshot, TransportDetails } from '../../core/models';
+import { Confirmer } from '../../core/confirmer.service';
 import { Notify } from '../../core/notify.service';
 import { InrPipe } from '../../shared/inr.pipe';
 
@@ -57,6 +58,7 @@ export class BillEditor implements OnInit {
   private invoicesApi = inject(InvoicesApi);
   private router = inject(Router);
   private notify = inject(Notify);
+  confirmer = inject(Confirmer);
 
   states = STATES;
   loading = signal(true);
@@ -67,7 +69,27 @@ export class BillEditor implements OnInit {
   business = signal<Business | null>(null);
   clients = signal<Client[]>([]);
   itemOptions = signal<ItemOption[]>([]);
+  /** Words typed in the item search box (shared: only one list is open at a time). */
+  itemQuery = signal('');
+  /** Items whose name contains every typed word, in any order ("box blue 3" finds "Bed - Box 4 Inch - Polyster - Blue - 3ft"). */
+  visibleItems = computed(() => {
+    const words = this.itemQuery().toLowerCase().split(/[\s,·—-]+/).filter(w => w);
+    return words.length ? this.itemOptions().filter(o => { const text = o.label.toLowerCase(); return words.every(w => text.includes(w)); })
+                        : this.itemOptions();
+  });
   existing = signal<Invoice | null>(null);
+
+  focusItemSearch() { setTimeout(() => document.querySelector<HTMLInputElement>('.item-search-input')?.focus(), 0); }
+
+  /** Enter in the item search picks the first match. */
+  pickFirstItem(l: EditorLine, sel: { hide(): void }, e: Event) {
+    e.preventDefault();
+    const first = this.visibleItems()[0];
+    if (!first) return;
+    l.itemId = first.id;
+    this.itemChanged(l);
+    sel.hide();
+  }
 
   // ---- form model (mutated by ngModel; `tick` tells computed values to re-run) ----
   tick = signal(0);
@@ -384,6 +406,13 @@ export class BillEditor implements OnInit {
   }
 
   /** Leaves without saving. The route guard asks first if there are unsaved changes. */
+  askSave(mode: 'draft' | 'final' | 'pdf') {
+    const what = mode === 'final' ? 'and finalize this bill' : mode === 'pdf' ? 'this bill and download the PDF' : 'this bill as a draft';
+    this.confirmer.save(what, () => this.save(mode));
+  }
+
+  askCancel() { this.confirmer.discard(() => this.cancel()); }
+
   cancel() {
     const ex = this.existing();
     this.router.navigate(ex ? ['/bills', ex.id] : ['/bills']);

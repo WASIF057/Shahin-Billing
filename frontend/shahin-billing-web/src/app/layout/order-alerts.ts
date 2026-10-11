@@ -48,7 +48,7 @@ import { OrderAlerts } from '../core/order-alerts.service';
   styles: `
     .alerts { position: fixed; top: 14px; right: 14px; z-index: 3000; display: flex; flex-direction: column; gap: 10px; width: min(380px, calc(100vw - 28px)); pointer-events: none; }
     .alerts > * { pointer-events: auto; }
-    .card { display: flex; gap: 12px; background: #fff; border: 1px solid var(--line); border-left: 6px solid var(--accent); border-radius: 14px;
+    .card { display: flex; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-left: 6px solid var(--accent); border-radius: 14px;
             padding: 14px 16px; box-shadow: 0 14px 36px rgba(15, 25, 50, 0.28); animation: slide 0.3s ease both; }
     .card.calm { border-left-color: var(--navy); }
     .icon { font-size: 1.5rem; color: var(--accent); margin-top: 2px; }
@@ -56,12 +56,12 @@ import { OrderAlerts } from '../core/order-alerts.service';
     .ring { animation: ring 1.1s ease-in-out 3; transform-origin: 50% 0; }
     .body { flex: 1; min-width: 0; }
     .prio { margin-left: 8px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: #fdecc8; color: var(--warn); }
-    .prio.urgent { background: #fbdcd9; color: var(--bad); }
+    .prio.urgent { background: color-mix(in srgb, var(--bad) 18%, transparent); color: var(--bad); }
     .who { font-weight: 700; margin-top: 2px; }
     ul { margin: 6px 0 0; padding-left: 18px; font-size: 0.88rem; }
     .more { font-size: 0.82rem; color: var(--muted); margin-top: 2px; }
     .actions { display: flex; gap: 6px; margin-top: 10px; }
-    .hint { background: #fff8e6; border: 1px solid #f1d28a; border-radius: 10px; padding: 8px 12px; font-size: 0.82rem; }
+    .hint { background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 10px; padding: 8px 12px; font-size: 0.82rem; }
     @keyframes slide { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
     @keyframes ring { 0%, 100% { transform: rotate(0); } 15% { transform: rotate(18deg); } 30% { transform: rotate(-16deg); } 45% { transform: rotate(12deg); } 60% { transform: rotate(-8deg); } 75% { transform: rotate(4deg); } }
     @media (prefers-reduced-motion: reduce) { .card, .ring { animation: none; } }

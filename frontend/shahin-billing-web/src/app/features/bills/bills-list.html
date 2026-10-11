@@ -117,7 +117,7 @@
     </div>
   }
   <ng-template #footer>
-    <button pButton type="button" label="Cancel" [text]="true" (click)="statusOpen.set(false)"></button>
-    <button pButton type="button" label="Save" icon="pi pi-check" [loading]="statusSaving()" (click)="saveStatus()"></button>
+    <button pButton type="button" label="Cancel" [text]="true" (click)="confirmer.discard(() => statusOpen.set(false))"></button>
+    <button pButton type="button" label="Save" icon="pi pi-check" [loading]="statusSaving()" (click)="askSaveStatus()"></button>
   </ng-template>
 </p-dialog>

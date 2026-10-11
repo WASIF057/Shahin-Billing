@@ -75,7 +75,7 @@ export class DashboardPage implements OnInit {
       tooltip: { callbacks: { label: (c: { parsed: { y: number } }) => '₹' + formatIndian(c.parsed.y, 0) } },
     },
     scales: {
-      y: { beginAtZero: true, grid: { color: '#edf0f4' }, ticks: { callback: (v: number) => '₹' + formatIndian(v, 0) } },
+      y: { beginAtZero: true, grid: { color: 'rgba(128, 138, 160, 0.2)' }, ticks: { callback: (v: number) => '₹' + formatIndian(v, 0) } },
       x: { grid: { display: false } },
     },
   };
