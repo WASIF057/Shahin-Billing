@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="104 40 468 136" width="1872" height="544">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;800&amp;display=swap');
+    .mo { font-family: Montserrat, sans-serif; }
+    .letters { fill: #1E2A5A; }
+    .blanket, .zzz { fill: #E0A43F; }
+    .pillow { fill: #F6D8C4; stroke: #1E2A5A; stroke-width: 1.5; }
+    .tagline { fill: #1E2A5A; }
+  </style>
+  <text class="mo letters" x="382" y="120" text-anchor="end" font-size="80" font-weight="800" letter-spacing="4">SHAH</text>
+  <rect class="letters" x="388" y="104" width="80" height="16" rx="3"/>
+  <path class="pillow" d="M392,90 Q404,85 416,90 Q419,96 416,102 Q404,106 392,102 Q389,96 392,90 Z"/>
+  <path class="blanket" d="M418,102 Q443,94 468,101 Q474,112 470,124 Q444,121 418,122 Z"/>
+  <text class="mo letters" x="474" y="120" font-size="80" font-weight="800">N</text>
+  <text class="mo zzz" x="422" y="82" font-size="14" font-weight="800">z</text>
+  <text class="mo zzz" x="436" y="68" font-size="18" font-weight="800">z</text>
+  <text class="mo tagline" x="340" y="158" text-anchor="middle" font-size="13" font-weight="500" letter-spacing="8">ENTERPRISES</text>
+</svg>
