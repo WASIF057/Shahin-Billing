@@ -38,10 +38,10 @@
 
   @if (data(); as d) {
     <div class="figures">
-      <section class="figure lead">
+      <section class="figure lead" [appTilt]="5">
         <i class="icon pi pi-chart-line"></i>
         <span class="label">Sales {{ d.customRange ? 'in ' + d.periodLabel : 'this month' }}</span>
-        <span class="value">{{ d.thisMonthSales | inr:true:0 }}</span>
+        <span class="value"><span [appCountUp]="d.thisMonthSales"></span></span>
         <span class="sub">
           @if (change() !== null) {
             <span [class.up]="change()! >= 0" [class.down]="change()! < 0">{{ change()! >= 0 ? '▲' : '▼' }} {{ change()! < 0 ? -change()! : change() }}%</span>
@@ -50,31 +50,31 @@
           · {{ d.periodBills }} {{ d.periodBills === 1 ? 'bill' : 'bills' }}
         </span>
       </section>
-      <section class="figure">
+      <section class="figure" [appTilt]="5">
         <i class="icon pi pi-wallet"></i>
         <span class="label">Waiting to be paid</span>
-        <span class="value">{{ d.unpaidAmount | inr:true:0 }}</span>
+        <span class="value"><span [appCountUp]="d.unpaidAmount"></span></span>
         <span class="sub"><a routerLink="/bills">{{ d.unpaidBills }} {{ d.unpaidBills === 1 ? 'bill' : 'bills' }} unpaid or part paid</a></span>
       </section>
     </div>
 
     <div class="pay-tiles">
-      <section class="tile paid">
+      <section class="tile paid" [appTilt]="3">
         <span class="t-label">Paid</span>
         <span class="t-count">{{ d.payments.paid.bills }} {{ d.payments.paid.bills === 1 ? 'bill' : 'bills' }}</span>
-        <span class="t-amount">{{ d.payments.paid.total | inr:true:0 }}</span>
+        <span class="t-amount"><span [appCountUp]="d.payments.paid.total"></span></span>
         <span class="t-sub">Received {{ d.payments.paid.received | inr:true:0 }}</span>
       </section>
-      <section class="tile part">
+      <section class="tile part" [appTilt]="3">
         <span class="t-label">Part paid</span>
         <span class="t-count">{{ d.payments.partPaid.bills }} {{ d.payments.partPaid.bills === 1 ? 'bill' : 'bills' }}</span>
-        <span class="t-amount">{{ d.payments.partPaid.total | inr:true:0 }}</span>
+        <span class="t-amount"><span [appCountUp]="d.payments.partPaid.total"></span></span>
         <span class="t-sub">Received {{ d.payments.partPaid.received | inr:true:0 }} · Due {{ d.payments.partPaid.balance | inr:true:0 }}</span>
       </section>
-      <section class="tile unpaid">
+      <section class="tile unpaid" [appTilt]="3">
         <span class="t-label">Unpaid</span>
         <span class="t-count">{{ d.payments.unpaid.bills }} {{ d.payments.unpaid.bills === 1 ? 'bill' : 'bills' }}</span>
-        <span class="t-amount">{{ d.payments.unpaid.total | inr:true:0 }}</span>
+        <span class="t-amount"><span [appCountUp]="d.payments.unpaid.total"></span></span>
         <span class="t-sub">Due {{ d.payments.unpaid.balance | inr:true:0 }}</span>
       </section>
     </div>

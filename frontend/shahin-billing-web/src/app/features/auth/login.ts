@@ -8,16 +8,28 @@ import { MessageModule } from 'primeng/message';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { AppLogo } from '../../shared/app-logo';
+import { AuthMood } from '../../shared/auth-mood';
+import { AuthScene } from '../../shared/auth-scene';
+import { AuthIntro } from '../../shared/auth-intro';
+import { canAnimate, Tilt } from '../../shared/motion';
 import { AuthService } from '../../core/auth.service';
 import { errorMessage } from '../../core/errors';
 
+const INTRO_KEY = 'shahin.intro.seen';
+function playIntro(): boolean {
+  if (!canAnimate()) return false;
+  try { return sessionStorage.getItem(INTRO_KEY) !== '1'; } catch { return true; }
+}
+
 @Component({
   selector: 'app-login',
-  imports: [FormsModule, RouterLink, ButtonModule, InputTextModule, PasswordModule, MessageModule, IconFieldModule, InputIconModule, AppLogo],
+  imports: [FormsModule, RouterLink, ButtonModule, InputTextModule, PasswordModule, MessageModule, IconFieldModule, InputIconModule, AppLogo, Tilt, AuthScene, AuthIntro],
   styleUrl: './auth.scss',
   template: `
-    <div class="wrap">
-      <section class="side">
+    @if (intro()) { <app-auth-intro (done)="introDone()" /> }
+    <div class="wrap" [class.pre]="intro()">
+      <section class="side" [appTilt]="9">
+        <app-auth-scene />
         <div class="brand-logo"><app-logo /></div>
         <div class="pitch">
           <span class="eyebrow">GST billing software</span>
@@ -28,20 +40,23 @@ import { errorMessage } from '../../core/errors';
             <li><i class="pi pi-file-pdf"></i> Professional PDF tax invoices</li>
             <li><i class="pi pi-wallet"></i> Payment tracking and reminders</li>
           </ul>
-          <div class="mock" aria-hidden="true">
+          <div class="mock-3d"><div class="mock" aria-hidden="true">
             <div class="mock-head"><b>TAX INVOICE</b><span>INV-0042</span></div>
             <div class="mock-row"><span class="w60"></span><span class="w20"></span></div>
             <div class="mock-row"><span class="w50"></span><span class="w20"></span></div>
             <div class="mock-row"><span class="w40"></span><span class="w20"></span></div>
             <div class="mock-total"><span>Grand total</span><b>&#8377; 24,780.00</b></div>
             <span class="mock-badge"><i class="pi pi-check"></i> Paid</span>
-          </div>
+          </div></div>
         </div>
-        <small>&copy; {{ year }} Shahin Billing &middot; Secure and private</small>
+        <div class="foot">
+          <small>&copy; {{ year }} Shahin Billing &middot; Secure and private</small>
+          <button type="button" class="replay" (click)="replay()"><i class="pi pi-play"></i> Replay intro</button>
+        </div>
       </section>
       <section class="form-side">
         @if (!challengeId()) {
-          <form (ngSubmit)="submit()" #f="ngForm">
+          <form [appTilt]="2.5" [class.shake]="shake()" (focusin)="focusIn($event)" (focusout)="focusOut()" (ngSubmit)="submit()" #f="ngForm">
             <div class="form-head">
               <span class="form-icon"><i class="pi pi-lock"></i></span>
               <h2>Welcome back</h2>
@@ -67,7 +82,7 @@ import { errorMessage } from '../../core/errors';
           </form>
         } @else {
           <!-- Step 2: the 6-digit code we emailed -->
-          <form (ngSubmit)="verify()">
+          <form [appTilt]="2.5" [class.shake]="shake()" (focusin)="focusIn($event)" (focusout)="focusOut()" (ngSubmit)="verify()">
             <div class="form-head"><span class="form-icon"><i class="pi pi-shield"></i></span><h2>Enter your code</h2></div>
             <p class="muted" style="margin: 0">We emailed a 6-digit code to <strong>{{ masked() }}</strong>. It works for 10 minutes.</p>
             @if (error()) { <p-message severity="error" [text]="error()!" /> }
@@ -88,10 +103,42 @@ import { errorMessage } from '../../core/errors';
   `,
 })
 export class Login implements OnDestroy {
+  mood = inject(AuthMood);
+  shake = signal(false);
+  private moodTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** A password box has focus: the mattress pulls its blanket over itself. */
+  focusIn(e: FocusEvent) {
+    const t = e.target as HTMLElement | null;
+    if (t instanceof HTMLInputElement && (t.type === 'password' || /pass|^np$|^cp$/i.test(t.id) || t.closest('p-password'))) this.mood.set('privacy');
+  }
+  focusOut() { if (this.mood.mood() === 'privacy') this.mood.reset(); }
+
+  /** Shows the error, shakes the card and the mattress. */
+  private fail(e: unknown) {
+    this.error.set(errorMessage(e));
+    this.mood.pulse('oops', 700);
+    this.shake.set(true);
+    setTimeout(() => this.shake.set(false), 550);
+  }
+
+  /** Lets the mattress celebrate for a moment, then carries on. */
+  private celebrate(go: () => void) {
+    this.mood.pulse('joy', 1100);
+    this.moodTimer = setTimeout(go, 850);
+  }
   private auth = inject(AuthService);
   private router = inject(Router);
 
   year = new Date().getFullYear();
+
+  /** The opening animation plays the first time the login page is shown in a browser session (not for people who asked for less motion). */
+  intro = signal(playIntro());
+  introDone() {
+    this.intro.set(false);
+    try { sessionStorage.setItem(INTRO_KEY, '1'); } catch { /* it will simply play again next time */ }
+  }
+  replay() { if (canAnimate()) this.intro.set(true); }
   email = '';
   password = '';
   code = '';
@@ -115,9 +162,9 @@ export class Login implements OnDestroy {
           this.masked.set(r.maskedEmail ?? 'your email');
           this.code = '';
           this.startCooldown(30);
-        } else this.router.navigate(['/']);
+        } else this.celebrate(() => this.router.navigate(['/']));
       },
-      error: e => { this.error.set(errorMessage(e)); this.busy.set(false); },
+      error: e => { this.fail(e); this.busy.set(false); },
     });
   }
 
@@ -132,8 +179,8 @@ export class Login implements OnDestroy {
     this.busy.set(true);
     this.error.set(null);
     this.auth.verifyOtp(this.challengeId()!, this.code).subscribe({
-      next: () => this.router.navigate(['/']),
-      error: e => { this.error.set(errorMessage(e)); this.busy.set(false); this.code = ''; },
+      next: () => this.celebrate(() => this.router.navigate(['/'])),
+      error: e => { this.fail(e); this.busy.set(false); this.code = ''; },
     });
   }
 
@@ -142,7 +189,7 @@ export class Login implements OnDestroy {
     this.error.set(null);
     this.auth.resendOtp(this.challengeId()!).subscribe({
       next: r => { this.masked.set(r.maskedEmail); this.startCooldown(30); },
-      error: e => this.error.set(errorMessage(e)),
+      error: e => this.fail(e),
     });
   }
 
@@ -158,5 +205,5 @@ export class Login implements OnDestroy {
   }
   private stopTimer() { if (this.timer) { clearInterval(this.timer); this.timer = null; } }
 
-  ngOnDestroy() { this.stopTimer(); }
+  ngOnDestroy() { this.mood.reset(); if (this.moodTimer) clearTimeout(this.moodTimer); this.stopTimer(); }
 }

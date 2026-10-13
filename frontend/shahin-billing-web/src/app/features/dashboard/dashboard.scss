@@ -1,7 +1,9 @@
 .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; align-items: end; margin-bottom: 16px; padding: 14px 18px; }
 .pay-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px; }
 .tile { background: var(--surface); border: 1px solid var(--line); border-left-width: 5px; border-radius: var(--radius-lg);
-        padding: 16px 20px; display: flex; flex-direction: column; gap: 2px; box-shadow: var(--shadow-sm); }
+        padding: 16px 20px; display: flex; flex-direction: column; gap: 2px; box-shadow: var(--shadow-sm);
+        transform: perspective(900px) rotateX(calc(var(--rx, 0) * 1deg)) rotateY(calc(var(--ry, 0) * 1deg)); transition: transform 0.15s ease-out, box-shadow 0.18s ease; }
+.tile:hover { box-shadow: var(--shadow-md); }
 .tile.paid { border-left-color: #2e9d62; }
 .tile.part { border-left-color: var(--accent); }
 .tile.unpaid { border-left-color: #c0392b; }

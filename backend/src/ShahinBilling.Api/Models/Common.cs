@@ -36,6 +36,8 @@ public class TemplateSettings
 {
     public string Layout { get; set; } = "Classic";          // Classic | Modern
     public string PrimaryColor { get; set; } = "#1F4E79";
+    /// <summary>Colour of the bill paper, #rrggbb. White unless the owner picks another light colour.</summary>
+    public string BackgroundColour { get; set; } = "#FFFFFF";
     public string FontSize { get; set; } = "Normal";         // Small | Normal | Large
     public string InvoiceTitle { get; set; } = "TAX INVOICE";
     public string NonGstTitle { get; set; } = "BILL";

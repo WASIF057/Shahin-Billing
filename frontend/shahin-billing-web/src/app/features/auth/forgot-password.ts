@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, OnDestroy, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
@@ -6,6 +6,9 @@ import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { MessageModule } from 'primeng/message';
 import { AppLogo } from '../../shared/app-logo';
+import { AuthMood } from '../../shared/auth-mood';
+import { AuthScene } from '../../shared/auth-scene';
+import { Tilt } from '../../shared/motion';
 import { AuthService } from '../../core/auth.service';
 import { errorMessage } from '../../core/errors';
 import { Notify } from '../../core/notify.service';
@@ -13,11 +16,12 @@ import { Notify } from '../../core/notify.service';
 /** Forgot password: 1) enter your email, 2) type the 6-digit code we emailed and choose a new password. */
 @Component({
   selector: 'app-forgot-password',
-  imports: [FormsModule, RouterLink, ButtonModule, InputTextModule, PasswordModule, MessageModule, AppLogo],
+  imports: [FormsModule, RouterLink, ButtonModule, InputTextModule, PasswordModule, MessageModule, AppLogo, Tilt, AuthScene],
   styleUrl: './auth.scss',
   template: `
     <div class="wrap">
-      <section class="side">
+      <section class="side" [appTilt]="9">
+        <app-auth-scene [low]="true" />
         <div class="brand-logo"><app-logo /></div>
         <div>
           <h1>Forgot your password?</h1>
@@ -27,7 +31,7 @@ import { Notify } from '../../core/notify.service';
       </section>
       <section class="form-side">
         @if (step() === 1) {
-          <form (ngSubmit)="send()" #f="ngForm">
+          <form [appTilt]="2.5" [class.shake]="shake()" (focusin)="focusIn($event)" (focusout)="focusOut()" (ngSubmit)="send()" #f="ngForm">
             <h2>Reset your password</h2>
             @if (error()) { <p-message severity="error" [text]="error()!" /> }
             <div class="field">
@@ -38,7 +42,7 @@ import { Notify } from '../../core/notify.service';
             <p class="alt"><a routerLink="/login">Back to log in</a></p>
           </form>
         } @else {
-          <form (ngSubmit)="reset()" #g="ngForm">
+          <form [appTilt]="2.5" [class.shake]="shake()" (focusin)="focusIn($event)" (focusout)="focusOut()" (ngSubmit)="reset()" #g="ngForm">
             <h2>Choose a new password</h2>
             <p class="muted" style="margin: 0">If <strong>{{ email }}</strong> has an account, a 6-digit code was emailed to its business email. It works for 10 minutes.</p>
             @if (error()) { <p-message severity="error" [text]="error()!" /> }
@@ -69,7 +73,31 @@ import { Notify } from '../../core/notify.service';
     </div>
   `,
 })
-export class ForgotPassword {
+export class ForgotPassword implements OnDestroy {
+  mood = inject(AuthMood);
+  shake = signal(false);
+  private moodTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** A password box has focus: the mattress pulls its blanket over itself. */
+  focusIn(e: FocusEvent) {
+    const t = e.target as HTMLElement | null;
+    if (t instanceof HTMLInputElement && (t.type === 'password' || /pass|^np$|^cp$/i.test(t.id) || t.closest('p-password'))) this.mood.set('privacy');
+  }
+  focusOut() { if (this.mood.mood() === 'privacy') this.mood.reset(); }
+
+  /** Shows the error, shakes the card and the mattress. */
+  private fail(e: unknown) {
+    this.error.set(errorMessage(e));
+    this.mood.pulse('oops', 700);
+    this.shake.set(true);
+    setTimeout(() => this.shake.set(false), 550);
+  }
+
+  /** Lets the mattress celebrate for a moment, then carries on. */
+  private celebrate(go: () => void) {
+    this.mood.pulse('joy', 1100);
+    this.moodTimer = setTimeout(go, 850);
+  }
   private auth = inject(AuthService);
   private router = inject(Router);
   private notify = inject(Notify);
@@ -86,8 +114,8 @@ export class ForgotPassword {
     this.busy.set(true);
     this.error.set(null);
     this.auth.forgotPassword(this.email).subscribe({
-      next: () => { this.busy.set(false); this.step.set(2); },
-      error: e => { this.error.set(errorMessage(e)); this.busy.set(false); },
+      next: () => { this.busy.set(false); this.mood.pulse('joy', 1100); this.step.set(2); },
+      error: e => { this.fail(e); this.busy.set(false); },
     });
   }
 
@@ -97,9 +125,11 @@ export class ForgotPassword {
     this.auth.resetPassword(this.email, this.code, this.newPassword).subscribe({
       next: () => {
         this.notify.ok('Password changed. Log in with your new password.');
-        this.router.navigate(['/login']);
+        this.celebrate(() => this.router.navigate(['/login']));
       },
-      error: e => { this.error.set(errorMessage(e)); this.busy.set(false); },
+      error: e => { this.fail(e); this.busy.set(false); },
     });
   }
+
+  ngOnDestroy() { this.mood.reset(); if (this.moodTimer) clearTimeout(this.moodTimer); }
 }

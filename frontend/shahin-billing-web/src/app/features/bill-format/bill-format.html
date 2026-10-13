@@ -41,6 +41,18 @@
               <p-colorpicker [(ngModel)]="t.primaryColor" (onChange)="changed()" format="hex" appendTo="body" />
             </div>
           </div>
+          <div class="field">
+            <label>Bill background colour</label>
+            <div class="swatches">
+              @for (p of paperSwatches; track p.value) {
+                <button type="button" class="swatch paper" [style.background]="p.value" [class.on]="(t.backgroundColour || '#FFFFFF').toLowerCase() === p.value.toLowerCase()"
+                        (click)="setPaper(t, p.value)" [title]="p.name" [attr.aria-label]="p.name"></button>
+              }
+              <p-colorpicker [(ngModel)]="t.backgroundColour" (onChange)="changed()" format="hex" appendTo="body" />
+            </div>
+            <span class="hint">White is the default. Choose a light colour, so the text stays easy to read and the bill prints well.</span>
+            @if (errors()['backgroundColour']) { <span class="error">{{ errors()['backgroundColour'] }}</span> }
+          </div>
         </section>
 
         <section class="panel">

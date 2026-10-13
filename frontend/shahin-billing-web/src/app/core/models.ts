@@ -9,6 +9,8 @@ export interface InvoiceNumbering { prefix: string; nonGstPrefix: string; separa
 export interface TemplateSettings {
   layout: 'Classic' | 'Modern';
   primaryColor: string;
+  /** Colour of the bill paper (a light colour). White by default. */
+  backgroundColour: string;
   fontSize: 'Small' | 'Normal' | 'Large';
   invoiceTitle: string;
   nonGstTitle: string;

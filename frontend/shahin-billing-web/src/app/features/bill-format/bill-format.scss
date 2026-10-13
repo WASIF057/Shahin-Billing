@@ -4,6 +4,7 @@
 .settings .panel > h2 { margin-bottom: 0; }
 .swatches { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .swatch { width: 28px; height: 28px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--line); cursor: pointer; }
+.swatch.paper { box-shadow: 0 0 0 1px var(--line); }
 .swatch.on { box-shadow: 0 0 0 2px var(--ink); }
 .toggles { display: flex; flex-direction: column; gap: 10px; }
 .preview { position: sticky; top: 16px; padding: 14px; }

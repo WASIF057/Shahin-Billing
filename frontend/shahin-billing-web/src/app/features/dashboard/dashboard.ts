@@ -12,11 +12,12 @@ import { formatIndian, toIsoDate } from '../../core/gst';
 import { Client, Dashboard } from '../../core/models';
 import { Notify } from '../../core/notify.service';
 import { InrPipe } from '../../shared/inr.pipe';
+import { CountUp, Tilt } from '../../shared/motion';
 import { StatusTag } from '../../shared/status-tag';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [DatePipe, FormsModule, RouterLink, ButtonModule, ChartModule, DatePickerModule, SelectModule, InrPipe, StatusTag],
+  imports: [DatePipe, FormsModule, RouterLink, ButtonModule, ChartModule, DatePickerModule, SelectModule, InrPipe, StatusTag, CountUp, Tilt],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })

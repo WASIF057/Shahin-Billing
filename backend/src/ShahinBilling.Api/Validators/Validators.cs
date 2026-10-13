@@ -92,6 +92,9 @@ public class TemplateValidator : AbstractValidator<TemplateSettings>
         RuleFor(x => x.Layout).Must(l => l is "Classic" or "Modern").WithMessage("Choose Classic or Modern.");
         RuleFor(x => x.FontSize).Must(f => f is "Small" or "Normal" or "Large");
         RuleFor(x => x.PrimaryColor).Matches("^#[0-9A-Fa-f]{6}$").WithMessage("Pick a colour.");
+        // a light colour only, so the dark text stays readable and printing does not waste ink
+        RuleFor(x => x.BackgroundColour).Matches("^#[0-9A-Fa-f]{6}$").WithMessage("Pick the paper colour from the colour box.")
+            .Must(c => ShahinBilling.Api.Helpers.Colours.IsLight(c)).WithMessage("Choose a light paper colour so the text stays easy to read.");
         RuleFor(x => x.InvoiceTitle).NotEmpty().MaximumLength(40);
     }
 }

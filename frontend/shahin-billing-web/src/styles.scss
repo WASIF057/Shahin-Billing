@@ -215,3 +215,12 @@ body .p-confirmdialog .p-confirmdialog-icon {
 body .p-confirmdialog .p-confirmdialog-icon.pop-danger { background: rgba(179, 38, 30, 0.12); color: var(--bad); box-shadow: 0 0 0 8px rgba(179, 38, 30, 0.07); }
 body .p-confirmdialog .p-dialog-footer { display: flex; gap: 10px; justify-content: center; padding: 18px 28px 26px; }
 body .p-confirmdialog .p-dialog-footer .p-button { flex: 1; height: 44px; border-radius: 12px; font-weight: 700; }
+
+/* An angle that CSS can animate (used for the turning glow on the login card) */
+@property --ang { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+
+/* The mouse-tilt numbers, registered so CSS can ease them (the left panel's light and the mattress glide instead of jumping) */
+@property --rx { syntax: "<number>"; inherits: true; initial-value: 0; }
+@property --ry { syntax: "<number>"; inherits: true; initial-value: 0; }
+@property --px { syntax: "<number>"; inherits: true; initial-value: 0; }
+@property --py { syntax: "<number>"; inherits: true; initial-value: 0; }

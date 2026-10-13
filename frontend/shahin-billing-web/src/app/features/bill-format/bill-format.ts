@@ -48,6 +48,10 @@ export class BillFormat implements OnInit, OnDestroy {
 
   layouts = [{ label: 'Classic', value: 'Classic' }, { label: 'Modern', value: 'Modern' }];
   sizes = [{ label: 'Small', value: 'Small' }, { label: 'Normal', value: 'Normal' }, { label: 'Large', value: 'Large' }];
+  paperSwatches = [
+    { name: 'White', value: '#FFFFFF' }, { name: 'Cream', value: '#FFF8E6' }, { name: 'Light grey', value: '#F3F4F6' },
+    { name: 'Light blue', value: '#EAF2FB' }, { name: 'Light green', value: '#EAF7EF' }, { name: 'Light pink', value: '#FDEEF1' },
+  ];
   swatches = ['#1F4E79', '#23466B', '#0F5257', '#2E5E3A', '#5B2A86', '#8A1C1C', '#333333'];
   toggles: { key: ToggleKey; label: string }[] = [
     { key: 'showLogo', label: 'Logo' },
@@ -83,13 +87,13 @@ export class BillFormat implements OnInit, OnDestroy {
     const id = this.id();
     if (id) {
       this.formatsApi.get(id).subscribe({
-        next: f => { this.name = f.name; this.isActive = f.isActive; this.t.set(f.settings); this.changed(); },
+        next: f => { this.name = f.name; this.isActive = f.isActive; f.settings.backgroundColour ||= '#FFFFFF'; this.t.set(f.settings); this.changed(); },
         error: e => { this.notify.error(e); this.router.navigate(['/bill-format']); },
       });
     } else {
       // New format: start from the look in use now, then change what you like
       this.api.template().subscribe({
-        next: t => { this.t.set(t); this.changed(); },
+        next: t => { t.backgroundColour ||= '#FFFFFF'; this.t.set(t); this.changed(); },
         error: e => this.notify.error(e),
       });
     }
@@ -104,6 +108,7 @@ export class BillFormat implements OnInit, OnDestroy {
   }
 
   setColor(t: TemplateSettings, c: string) { t.primaryColor = c; this.changed(); }
+  setPaper(t: TemplateSettings, c: string) { t.backgroundColour = c; this.changed(); }
 
   askSave() { this.confirmer.save('this bill format', () => this.save()); }
 

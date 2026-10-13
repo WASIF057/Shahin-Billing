@@ -12,6 +12,7 @@ public partial class InvoiceDocument(Invoice inv, TemplateSettings t, string cop
 {
     private readonly bool _modern = t.Layout.Equals("Modern", StringComparison.OrdinalIgnoreCase);
     private readonly string _primary = HexColor().IsMatch(t.PrimaryColor ?? "") ? t.PrimaryColor! : "#1F4E79";
+    private readonly string _paper = HexColor().IsMatch(t.BackgroundColour ?? "") && Colours.IsLight(t.BackgroundColour) ? t.BackgroundColour! : "#FFFFFF";
     private readonly float _fs = t.FontSize switch { "Small" => 8, "Large" => 10, _ => 9 };
     private BusinessSnapshot B => inv.BusinessSnapshot;
 
@@ -53,6 +54,7 @@ public partial class InvoiceDocument(Invoice inv, TemplateSettings t, string cop
         {
             page.Size(PageSizes.A4);
             page.Margin(28);
+            page.PageColor(_paper);
             page.DefaultTextStyle(x => x.FontSize(_fs).FontColor(Colors.Grey.Darken4));
 
             page.Header().Element(ComposeHeader);
