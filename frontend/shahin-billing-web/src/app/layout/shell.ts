@@ -1,5 +1,5 @@
 import { Component, computed, HostListener, inject, OnDestroy, OnInit, signal } from '@angular/core';
-import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { NavigationCancel, NavigationEnd, NavigationError, NavigationStart, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { AuthService } from '../core/auth.service';
 import { OrderAlerts } from '../core/order-alerts.service';
@@ -29,6 +29,9 @@ export class Shell implements OnInit, OnDestroy {
   /** The dashboard has its own big "Good morning" heading, so the top bar keeps its greeting tucked away until that heading scrolls out of view. */
   onDashboard = signal(this.isDashboard(this.router.url));
   scrolled = signal(false);
+  /** True while the next page is loading (shown as a thin bar at the top). It waits 150 ms first, so quick changes do not flicker. */
+  navigating = signal(false);
+  private navTimer: ReturnType<typeof setTimeout> | null = null;
   @HostListener('window:scroll') onScroll() { this.scrolled.set(window.scrollY > 70); }
   private isDashboard(url: string) { return url.split('?')[0] === '/'; }
   theme = inject(ThemeService);
@@ -41,8 +44,15 @@ export class Shell implements OnInit, OnDestroy {
 
   /** Owner and staff: watch for new orders (popup, ring, badge) for as long as the app is open. */
   ngOnInit() {
+    this.router.events.subscribe(e => {
+      if (e instanceof NavigationStart) { this.navTimer = setTimeout(() => this.navigating.set(true), 150); }
+      else if (e instanceof NavigationEnd || e instanceof NavigationCancel || e instanceof NavigationError) {
+        if (this.navTimer) { clearTimeout(this.navTimer); this.navTimer = null; }
+        this.navigating.set(false);
+      }
+    });
     this.router.events.subscribe(e => { if (e instanceof NavigationEnd) { this.onDashboard.set(this.isDashboard(e.urlAfterRedirects)); this.onScroll(); } });
-    if (!this.auth.isClient()) { this.alerts.start(); this.brand.load(); } }
+    if (!this.auth.viewIsClient()) { this.alerts.start(); this.brand.load(); } }
   ngOnDestroy() { this.alerts.stop(); }
 
   private clientLinks: NavLink[] = [
@@ -67,7 +77,7 @@ export class Shell implements OnInit, OnDestroy {
   ];
 
   /** Staff only see the screens they can use. */
-  links = computed(() => this.auth.isClient() ? this.clientLinks : this.allLinks.filter(l => !l.ownerOnly || this.auth.isOwner()));
+  links = computed(() => this.auth.viewIsClient() ? this.clientLinks : this.allLinks.filter(l => !l.ownerOnly || this.auth.viewIsOwner()));
 
   /** The menu split under small headings (Sales, Products...). A heading with nothing the person may open is left out. */
   groups = computed<NavGroup[]>(() => {
@@ -92,9 +102,9 @@ export class Shell implements OnInit, OnDestroy {
     return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
   }
   today() { return new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); }
-  firstName() { return (this.auth.user()?.name ?? '').trim().split(/\s+/)[0] ?? ''; }
+  firstName() { return (this.auth.viewUser()?.name ?? '').trim().split(/\s+/)[0] ?? ''; }
   initials() {
-    const n = (this.auth.user()?.name ?? '').trim();
+    const n = (this.auth.viewUser()?.name ?? '').trim();
     return n ? n.split(/\s+/).slice(0, 2).map(p => p[0]).join('').toUpperCase() : '?';
   }
 

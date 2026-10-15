@@ -9,6 +9,7 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { AppLogo } from '../../shared/app-logo';
 import { AuthMood } from '../../shared/auth-mood';
+import { Welcome } from '../../shared/welcome';
 import { AuthScene } from '../../shared/auth-scene';
 import { Tilt } from '../../shared/motion';
 import { AuthService } from '../../core/auth.service';
@@ -110,6 +111,7 @@ import { errorMessage } from '../../core/errors';
 })
 export class Register implements OnDestroy {
   mood = inject(AuthMood);
+  private welcome = inject(Welcome);
   shake = signal(false);
   private moodTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -131,7 +133,7 @@ export class Register implements OnDestroy {
   /** Lets the mattress celebrate for a moment, then carries on. */
   private celebrate(go: () => void) {
     this.mood.pulse('joy', 1100);
-    this.moodTimer = setTimeout(go, 850);
+    this.moodTimer = setTimeout(() => this.welcome.play(go), 650);
   }
   private auth = inject(AuthService);
   private router = inject(Router);

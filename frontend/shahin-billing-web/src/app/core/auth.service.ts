@@ -27,13 +27,28 @@ export class AuthService {
   /** Staff can bill and take payments only; the owner can do everything. */
   /** A client's ordering login: sees only the ordering pages. */
   readonly isClient = computed(() => this.user()?.role === 'Client');
-  readonly isOwner = computed(() => (this.user()?.role ?? 'Owner') === 'Owner');
+  /** Owner rights. Nobody logged in has none (this used to say "owner" when there was no user, which showed owner screens while logging out). */
+  readonly isOwner = computed(() => { const u = this.user(); return !!u && (u.role ?? 'Owner') === 'Owner'; });
+
+  /**
+   * The last person who was logged in, kept after logout until the next login. The sidebar and top bar read these, so
+   * while the login page is still loading they keep showing the same menu instead of flipping to another role's.
+   */
+  private shown = signal<UserInfo | null>(this.load()?.user ?? null);
+  readonly viewUser = this.shown.asReadonly();
+  readonly viewIsClient = computed(() => this.shown()?.role === 'Client');
+  readonly viewIsOwner = computed(() => (this.shown()?.role ?? 'Owner') === 'Owner');
 
   get token(): string | null { return this.isLoggedIn() ? this.session()!.token : null; }
 
   /** Step 1. Logs in straight away, or (when email codes are on) says a code was emailed. */
-  login(email: string, password: string): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.url}/login`, { email, password }).pipe(tap(r => { if (r.auth) this.store(r.auth); }));
+  login(email: string, password: string, captchaId?: string, captchaAnswer?: string): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.url}/login`, { email, password, captchaId, captchaAnswer }).pipe(tap(r => { if (r.auth) this.store(r.auth); }));
+  }
+
+  /** A new "type the letters" picture for the login page ({ required: false } when the server has it switched off). */
+  captcha(): Observable<{ required: boolean; id?: string; image?: string }> {
+    return this.http.get<{ required: boolean; id?: string; image?: string }>(`${this.url}/captcha`);
   }
 
   /** Step 2: the 6-digit code from the email. */
@@ -76,15 +91,22 @@ export class AuthService {
     if (s) this.store({ ...s, user: { ...s.user, businessName: name } });
   }
 
+  /** True while logging out, so the page change to the login screen is a clean cut instead of a cross-fade of two unrelated pages. */
+  loggingOut = false;
+
   logout(redirect = true) {
     localStorage.removeItem(STORAGE_KEY);
     this.session.set(null);
-    if (redirect) this.router.navigate(['/login']);
+    if (redirect) {
+      this.loggingOut = true;
+      this.router.navigate(['/login']).finally(() => { this.loggingOut = false; });
+    }
   }
 
   private store(r: AuthResponse) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(r));
     this.session.set(r);
+    this.shown.set(r.user);
   }
 
   private load(): AuthResponse | null {

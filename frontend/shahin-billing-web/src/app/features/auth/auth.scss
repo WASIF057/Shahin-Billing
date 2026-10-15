@@ -243,3 +243,12 @@ form.shake { animation: shakeCard 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both
 .meter[data-level='4'] .segs i.on { background: #1f9d63; }
 .mlabel { font-size: 0.78rem; color: var(--muted); font-weight: 600; }
 @media (prefers-reduced-motion: reduce) { .side h1 { animation: none; } form.shake { animation: none !important; } .meter .segs i { transition: none; } }
+
+/* ---------- Captcha ---------- */
+.cap-row { display: flex; align-items: center; gap: 10px; }
+.cap-img { display: block; max-width: calc(100% - 52px); height: auto; border-radius: 10px; border: 1px solid var(--line); background: #f3f6fb; cursor: pointer; user-select: none; }
+.cap-refresh { width: 42px; height: 42px; flex: 0 0 42px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--navy); cursor: pointer; display: grid; place-items: center; transition: transform 0.15s ease, border-color 0.15s ease; }
+.cap-refresh:hover:not(:disabled) { border-color: var(--navy); transform: rotate(40deg); }
+.cap-refresh:disabled { opacity: 0.6; cursor: default; }
+form .field .cap-input { text-transform: uppercase; letter-spacing: 0.22em; font-weight: 800; text-align: center; padding: 12px 14px; }
+form .field .cap-input::placeholder { text-transform: none; letter-spacing: 0; font-weight: 500; }

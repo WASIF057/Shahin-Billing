@@ -7,7 +7,7 @@ using ShahinBilling.Api.Services;
 
 namespace ShahinBilling.Api.Controllers;
 
-public class AuthController(AuthService auth, OtpService otp) : ApiControllerBase
+public class AuthController(AuthService auth, OtpService otp, CaptchaService captcha) : ApiControllerBase
 {
     [AllowAnonymous, EnableRateLimiting("auth"), HttpPost("register")]
     public async Task<LoginResponse> Register(RegisterRequest req, [FromServices] IValidator<RegisterRequest> v)
@@ -20,7 +20,20 @@ public class AuthController(AuthService auth, OtpService otp) : ApiControllerBas
     public Task<AuthResponse> VerifyRegistration(VerifyOtpRequest req) => auth.VerifyRegistrationAsync(req);
 
     [AllowAnonymous, EnableRateLimiting("auth"), HttpPost("login")]
-    public Task<LoginResponse> Login(LoginRequest req) => auth.LoginAsync(req);
+    public Task<LoginResponse> Login(LoginRequest req)
+    {
+        captcha.Require(req.CaptchaId, req.CaptchaAnswer);   // before the password is checked or a code is emailed
+        return auth.LoginAsync(req);
+    }
+
+    /// <summary>A new "type the letters" picture for the login page, or { required: false } when it is switched off.</summary>
+    [AllowAnonymous, EnableRateLimiting("captcha"), HttpGet("captcha")]
+    public object Captcha()
+    {
+        if (!captcha.Enabled) return new { required = false };
+        var c = captcha.Create();
+        return new { required = true, id = c.Id, image = c.Image };
+    }
 
     [AllowAnonymous, EnableRateLimiting("auth"), HttpPost("verify-otp")]
     public Task<AuthResponse> VerifyOtp(VerifyOtpRequest req) => auth.VerifyOtpAsync(req);

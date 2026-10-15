@@ -1,13 +1,14 @@
+<div class="nav-bar" [class.on]="navigating()" aria-hidden="true"></div>
 <div class="shell" [class.menu-open]="menuOpen()" [class.collapsed]="collapsed()">
   <aside class="sidebar">
     <div class="brand">
       @if (brand.logo() && brand.style() !== 'Themed') {
         <span class="mark logo"><img [src]="brand.logo()" alt="" /></span>
       <div>
-          <div class="brand-name">{{ auth.user()?.businessName || 'Billing' }}</div>
-          <div class="brand-sub">{{ auth.isClient() ? 'Ordering' : 'GST billing' }}</div>
+          <div class="brand-name">{{ auth.viewUser()?.businessName || 'Billing' }}</div>
+          <div class="brand-sub">{{ auth.viewIsClient() ? 'Ordering' : 'GST billing' }}</div>
         </div>
-      } @else if (brand.loaded() || auth.isClient()) {
+      } @else if (brand.loaded() || auth.viewIsClient()) {
         <!-- No uploaded logo: the built-in logo, which follows the colour theme -->
         <div class="logo-card">
           <app-logo class="logo-full" variant="full" />
@@ -16,7 +17,7 @@
       }
     </div>
 
-    @if (auth.isClient()) {
+    @if (auth.viewIsClient()) {
       <a class="new-bill" routerLink="/portal" (click)="menuOpen.set(false)"><i class="pi pi-shopping-cart"></i> <span class="lbl">Order products</span></a>
     } @else {
       <a class="new-bill" routerLink="/bills/new" (click)="menuOpen.set(false)"><i class="pi pi-plus"></i> <span class="lbl">Create bill</span></a>
@@ -40,9 +41,9 @@
     </button>
 
     <div class="me">
-      <div class="me-name">{{ auth.user()?.name }}</div>
-      <div class="me-mail">{{ auth.user()?.email }}</div>
-      @if (!auth.isClient()) {
+      <div class="me-name">{{ auth.viewUser()?.name }}</div>
+      <div class="me-mail">{{ auth.viewUser()?.email }}</div>
+      @if (!auth.viewIsClient()) {
         <div class="alertbar">
           <button type="button" (click)="alerts.toggleSound()" [attr.aria-pressed]="alerts.soundOn()">
             <i class="pi" [class.pi-volume-up]="alerts.soundOn()" [class.pi-volume-off]="!alerts.soundOn()"></i>
@@ -100,16 +101,16 @@
         <div class="hello-main">{{ greeting() }}, {{ firstName() }}</div>
         <div class="hello-sub">{{ today() }}</div>
       </div>
-      <span class="top-title">{{ auth.user()?.businessName }}</span>
+      <span class="top-title">{{ auth.viewUser()?.businessName }}</span>
       <div class="top-actions">
         <button type="button" class="icon-btn" (click)="theme.setMode(theme.isDark() ? 'light' : 'dark')"
                 [attr.aria-label]="theme.isDark() ? 'Switch to light mode' : 'Switch to dark mode'" [title]="theme.isDark() ? 'Light mode' : 'Dark mode'">
           <i class="pi" [class.pi-moon]="!theme.isDark()" [class.pi-sun]="theme.isDark()"></i>
         </button>
-        @if (!auth.isClient()) {
+        @if (!auth.viewIsClient()) {
           <a class="top-cta" routerLink="/bills/new"><i class="pi pi-plus"></i> <span>Create bill</span></a>
         }
-        <a class="avatar" routerLink="/account" [title]="auth.user()?.name || ''">{{ initials() }}</a>
+        <a class="avatar" routerLink="/account" [title]="auth.viewUser()?.name || ''">{{ initials() }}</a>
       </div>
     </header>
     <main>
@@ -118,4 +119,4 @@
   </div>
 </div>
 
-@if (!auth.isClient()) { <app-order-alerts /> }
+@if (!auth.viewIsClient()) { <app-order-alerts /> }

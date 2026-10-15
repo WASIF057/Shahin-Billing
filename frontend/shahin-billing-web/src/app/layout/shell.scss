@@ -110,6 +110,14 @@ button.acct { background: none; border: 0; padding: 0; font: inherit; font-weigh
 .logout { margin-top: 6px; margin-left: -10px; color: #c9d3e3 !important; }
 
 .main { flex: 1; min-width: 0; }
+main { view-transition-name: page; }
+
+/* A thin bar across the top while the next page is loading */
+.nav-bar { position: fixed; left: 0; right: 0; top: 0; height: 3px; z-index: 1500; overflow: hidden; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
+.nav-bar.on { opacity: 1; }
+.nav-bar::after { content: ''; position: absolute; inset: 0; width: 40%; background: linear-gradient(90deg, transparent, var(--accent), var(--navy-light), transparent); animation: sweep 1s ease-in-out infinite; }
+@keyframes sweep { from { transform: translateX(-100%); } to { transform: translateX(260%); } }
+@media (prefers-reduced-motion: reduce) { .nav-bar::after { animation: none; width: 100%; } }
 /* The built-in logo: a white card so the theme-coloured letters always read well */
 .logo-card { width: 100%; background: #fff; border-radius: 14px; padding: 10px 12px; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25); }
 .logo-icon { display: none; }

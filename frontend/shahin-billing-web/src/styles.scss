@@ -79,7 +79,7 @@ a { color: var(--navy); }
 .small { font-size: 0.85rem; }
 
 /* ---------- Page scaffolding ---------- */
-.page { max-width: 1240px; margin: 0 auto; padding: 28px 32px 64px; animation: rise 0.35s ease both; }
+.page { max-width: 1240px; margin: 0 auto; padding: 28px 32px 64px; }
 .page-head {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
   flex-wrap: wrap; margin-bottom: 20px;
@@ -224,3 +224,21 @@ body .p-confirmdialog .p-dialog-footer .p-button { flex: 1; height: 44px; border
 @property --ry { syntax: "<number>"; inherits: true; initial-value: 0; }
 @property --px { syntax: "<number>"; inherits: true; initial-value: 0; }
 @property --py { syntax: "<number>"; inherits: true; initial-value: 0; }
+
+/* ---------- Page transitions ---------- */
+/* Changing page: the old content lifts away, the new content rises in (the sidebar and top bar do not move) */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.3s; }
+::view-transition-old(page) { animation: pageOut 0.2s cubic-bezier(0.4, 0, 1, 1) both; }
+::view-transition-new(page) { animation: pageIn 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes pageOut { to { opacity: 0; transform: translateY(-12px) scale(0.99); } }
+@keyframes pageIn { from { opacity: 0; transform: translateY(22px) scale(0.985); } }
+
+/* Inside a page, the heading, filters and panels appear one after another */
+.page > * { animation: rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.page > *:nth-child(2) { animation-delay: 0.06s; } .page > *:nth-child(3) { animation-delay: 0.12s; }
+.page > *:nth-child(4) { animation-delay: 0.18s; } .page > *:nth-child(5) { animation-delay: 0.24s; }
+.page > *:nth-child(n + 6) { animation-delay: 0.3s; }
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(page), ::view-transition-new(page) { animation: none; }
+  .page > * { animation: none; }
+}

@@ -36,6 +36,7 @@ builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<SessionValidator>();
 builder.Services.AddScoped<ActivityService>();
 builder.Services.AddScoped<OtpService>();
+builder.Services.AddSingleton<CaptchaService>();
 builder.Services.AddSingleton<BackupExporter>();
 builder.Services.AddHostedService<BackupHostedService>();
 builder.Services.AddHostedService<ReminderHostedService>();
@@ -105,6 +106,10 @@ builder.Services.AddRateLimiter(o =>
     o.AddPolicy("auth", ctx => RateLimitPartition.GetFixedWindowLimiter(
         ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = builder.Configuration.GetValue("RateLimit:AuthPerMinute", 10), Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+    // asking for a new login picture: more room than the login itself, since people press refresh, but still limited
+    o.AddPolicy("captcha", ctx => RateLimitPartition.GetFixedWindowLimiter(
+        ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = builder.Configuration.GetValue("RateLimit:CaptchaPerMinute", 40), Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
 });
 
 // ---------- CORS ----------

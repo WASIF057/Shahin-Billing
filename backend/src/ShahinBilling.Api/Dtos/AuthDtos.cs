@@ -12,6 +12,9 @@ public class LoginRequest
 {
     public string Email { get; set; } = "";
     public string Password { get; set; } = "";
+    /// <summary>The picture's id and the letters typed from it (see CaptchaService). Ignored when the captcha is switched off.</summary>
+    public string? CaptchaId { get; set; }
+    public string? CaptchaAnswer { get; set; }
 }
 
 public class ChangePasswordRequest

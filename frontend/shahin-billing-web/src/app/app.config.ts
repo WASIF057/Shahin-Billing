@@ -1,12 +1,14 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { ApplicationConfig, inject, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { provideRouter, withComponentInputBinding } from '@angular/router';
+import { provideRouter, withComponentInputBinding, withViewTransitions } from '@angular/router';
 import { providePrimeNG } from 'primeng/config';
 import { Confirmation, ConfirmationService, MessageService } from 'primeng/api';
 import { definePreset } from '@primeuix/themes';
 import Aura from '@primeuix/themes/aura';
 import { routes } from './app.routes';
 import { authInterceptor } from './core/auth.interceptor';
+import { AuthService } from './core/auth.service';
+import { Welcome } from './shared/welcome';
 
 /** PrimeNG theme: Aura with a deep "ticking-stripe" navy as the primary colour. */
 const ShahinPreset = definePreset(Aura, {
@@ -34,7 +36,11 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     // withComponentInputBinding: route params like :id arrive as component inputs
-    provideRouter(routes, withComponentInputBinding()),
+    provideRouter(routes, withComponentInputBinding(), withViewTransitions({
+      skipInitialTransition: true,
+      // The page-change animation is drawn above everything, even the welcome doors, so it would show the dashboard on top of them.
+      onViewTransitionCreated: ({ transition }) => { if (inject(Welcome).active() || inject(AuthService).loggingOut) transition.skipTransition(); },
+    })),
     provideHttpClient(withInterceptors([authInterceptor])),
     providePrimeNG({
       theme: { preset: ShahinPreset, options: { darkModeSelector: '.app-dark', cssLayer: false } },

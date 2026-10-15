@@ -9,6 +9,7 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { AppLogo } from '../../shared/app-logo';
 import { AuthMood } from '../../shared/auth-mood';
+import { Welcome } from '../../shared/welcome';
 import { AuthScene } from '../../shared/auth-scene';
 import { AuthIntro } from '../../shared/auth-intro';
 import { canAnimate, Tilt } from '../../shared/motion';
@@ -76,6 +77,19 @@ function playIntro(): boolean {
                           [fluid]="true" required autocomplete="current-password" />
               <a class="forgot" routerLink="/forgot-password">Forgot password?</a>
             </div>
+            @if (captcha(); as cap) {
+              <div class="field captcha">
+                <label for="captcha">Security check</label>
+                <div class="cap-row">
+                  <img class="cap-img" [src]="cap.image" alt="Letters to type" width="230" height="72" (click)="loadCaptcha()" title="Click for a new picture" />
+                  <button type="button" class="cap-refresh" (click)="loadCaptcha()" [disabled]="capLoading()" aria-label="Get a new picture" title="New picture">
+                    <i class="pi pi-refresh" [class.pi-spin]="capLoading()"></i>
+                  </button>
+                </div>
+                <input pInputText id="captcha" name="captcha" class="cap-input" [(ngModel)]="captchaAnswer" maxlength="8" required
+                       autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Type the letters from the picture" />
+              </div>
+            }
             <button pButton type="submit" label="Log in" [loading]="busy()" [disabled]="f.invalid"></button>
 
             <p class="alt">New here? <a routerLink="/register">Create an account</a></p>
@@ -104,6 +118,7 @@ function playIntro(): boolean {
 })
 export class Login implements OnDestroy {
   mood = inject(AuthMood);
+  private welcome = inject(Welcome);
   shake = signal(false);
   private moodTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -117,6 +132,7 @@ export class Login implements OnDestroy {
   /** Shows the error, shakes the card and the mattress. */
   private fail(e: unknown) {
     this.error.set(errorMessage(e));
+    if (!this.challengeId()) this.loadCaptcha();
     this.mood.pulse('oops', 700);
     this.shake.set(true);
     setTimeout(() => this.shake.set(false), 550);
@@ -125,12 +141,28 @@ export class Login implements OnDestroy {
   /** Lets the mattress celebrate for a moment, then carries on. */
   private celebrate(go: () => void) {
     this.mood.pulse('joy', 1100);
-    this.moodTimer = setTimeout(go, 850);
+    this.moodTimer = setTimeout(() => this.welcome.play(go), 650);
   }
   private auth = inject(AuthService);
   private router = inject(Router);
 
   year = new Date().getFullYear();
+
+  // "type the letters" check (shown only when the server asks for it)
+  captcha = signal<{ id: string; image: string } | null>(null);
+  captchaAnswer = '';
+  capLoading = signal(false);
+
+  constructor() { this.loadCaptcha(); }
+
+  loadCaptcha() {
+    this.capLoading.set(true);
+    this.captchaAnswer = '';
+    this.auth.captcha().subscribe({
+      next: c => { this.captcha.set(c.required && c.id && c.image ? { id: c.id, image: c.image } : null); this.capLoading.set(false); },
+      error: () => { this.captcha.set(null); this.capLoading.set(false); },   // if the picture cannot be loaded, do not block the form
+    });
+  }
 
   /** The opening animation plays the first time the login page is shown in a browser session (not for people who asked for less motion). */
   intro = signal(playIntro());
@@ -154,7 +186,7 @@ export class Login implements OnDestroy {
   submit() {
     this.busy.set(true);
     this.error.set(null);
-    this.auth.login(this.email, this.password).subscribe({
+    this.auth.login(this.email, this.password, this.captcha()?.id, this.captchaAnswer).subscribe({
       next: r => {
         this.busy.set(false);
         if (r.otpRequired) {
@@ -193,7 +225,7 @@ export class Login implements OnDestroy {
     });
   }
 
-  back() { this.stopTimer(); this.challengeId.set(null); this.code = ''; this.error.set(null); this.password = ''; }
+  back() { this.stopTimer(); this.challengeId.set(null); this.code = ''; this.error.set(null); this.password = ''; this.loadCaptcha(); }
 
   private startCooldown(seconds: number) {
     this.stopTimer();
