@@ -5,7 +5,8 @@ export function errorMessage(err: unknown): string {
   if (typeof err === 'string') return err;   // a message written by the screen itself
   if (err instanceof HttpErrorResponse) {
     if (err.status === 0) return 'Can’t reach the server. Check that the API is running.';
-    if (err.status === 429) return 'Too many attempts. Please wait a minute and try again.';
+    if (err.status === 502 || err.status === 503 || err.status === 504) return 'The server is not answering right now. Please try again in a moment.';
+    if (err.status === 429) return 'Too many requests. Please wait a minute and try again.';
     const body = err.error;
     if (body && typeof body === 'object') {
       if (body.errors && typeof body.errors === 'object') {

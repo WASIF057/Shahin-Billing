@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
 using ShahinBilling.Api.Auth;
 using ShahinBilling.Api.Dtos;
@@ -9,6 +10,7 @@ namespace ShahinBilling.Api.Controllers;
 
 /// <summary>Bring clients or items in from an Excel file. kind = "clients" or "items".</summary>
 [Authorize(Roles = AppRoles.Owner)]
+[EnableRateLimiting("heavy")]
 public class ImportController(ImportService service) : StaffApiControllerBase
 {
     private const string Xlsx = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";

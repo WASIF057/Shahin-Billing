@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
 using ShahinBilling.Api.Auth;
 using FluentValidation;
@@ -15,6 +16,7 @@ public class ItemsController(ItemService service, IValidator<Item> validator, Sh
 
     /// <summary>Items as an Excel file, one sheet per type. ?typeId= (empty = all, "none" = no type, or a type id).</summary>
     [Authorize(Roles = AppRoles.Owner)]
+    [EnableRateLimiting("heavy")]
     [HttpGet("export")]
     public async Task<IActionResult> Export([FromQuery] string? typeId)
     {

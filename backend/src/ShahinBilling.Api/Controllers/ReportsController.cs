@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using ShahinBilling.Api.Auth;
 using Microsoft.AspNetCore.Mvc;
 using ShahinBilling.Api.Infrastructure;
@@ -7,6 +8,7 @@ using ShahinBilling.Api.Reports;
 namespace ShahinBilling.Api.Controllers;
 
 [Authorize(Roles = AppRoles.Owner)]
+[EnableRateLimiting("heavy")]
 public class ReportsController(ReportService reports) : StaffApiControllerBase
 {
     private const string Xlsx = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";

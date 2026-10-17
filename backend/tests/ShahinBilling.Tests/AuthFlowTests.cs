@@ -45,8 +45,13 @@ public class AppFactory : WebApplicationFactory<Program>
             ["Mongo__ConnectionString"] = Conn, ["Mongo__Database"] = Db,
             ["Jwt__Key"] = "integration-test-signing-key-0123456789abcdef",
             ["Smtp__Host"] = "fake.local", ["Smtp__FromEmail"] = "billing@test.local",
-            ["Backup__Enabled"] = "false", ["RateLimit__AuthPerMinute"] = "1000", ["Security__RequireOtp"] = "true", ["Security__RequireCaptcha"] = "false",
-        }) Environment.SetEnvironmentVariable(k, v);
+            ["Backup__Enabled"] = "false", ["RateLimit__AuthPerMinute"] = "1000", ["RateLimit__GlobalPerMinute"] = "100000", ["RateLimit__AnonymousPerMinute"] = "100000", ["RateLimit__HeavyPerMinute"] = "100000", ["RateLimit__CaptchaPerMinute"] = "100000", ["Security__RequireOtp"] = "true", ["Security__RequireCaptcha"] = "false",
+        })
+        {
+            // a rate-limit test may have set its own (tiny) limit first: keep that. Everything else is set fresh each time (the database name is unique per run)
+            if (k.StartsWith("RateLimit__") && Environment.GetEnvironmentVariable(k) is not null) continue;
+            Environment.SetEnvironmentVariable(k, v);
+        }
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder b)

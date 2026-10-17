@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
 using ShahinBilling.Api.Auth;
 using FluentValidation;
@@ -59,6 +60,7 @@ public class InvoicesController(
     public Task<Invoice> Calculate(InvoiceRequest req) => service.BuildAsync(BusinessId, req);
 
     /// <summary>Renders the unsaved bill as a PDF (the "View bill" button). Nothing is saved and no number is used.</summary>
+    [EnableRateLimiting("heavy")]
     [HttpPost("preview-pdf")]
     public async Task<IActionResult> PreviewPdf(InvoiceRequest req, [FromQuery] string? invoiceId = null)
     {
@@ -131,6 +133,7 @@ public class InvoicesController(
     }
 
     /// <summary>A receipt PDF for one payment on the bill.</summary>
+    [EnableRateLimiting("heavy")]
     [HttpGet("{id}/payments/{paymentId}/receipt")]
     public async Task<IActionResult> Receipt(string id, string paymentId)
     {
@@ -145,6 +148,7 @@ public class InvoicesController(
     }
 
     /// <summary>?copies=original,duplicate,triplicate (default: the Bill Format setting). ?inline=true opens in the browser.</summary>
+    [EnableRateLimiting("heavy")]
     [HttpGet("{id}/pdf")]
     public async Task<IActionResult> Pdf(string id, [FromQuery] string? copies, [FromQuery] bool inline = false, [FromQuery] bool notify = false)
     {

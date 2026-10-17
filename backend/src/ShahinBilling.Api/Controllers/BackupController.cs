@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
 using ShahinBilling.Api.Auth;
 using Microsoft.AspNetCore.Mvc;
@@ -9,6 +10,7 @@ namespace ShahinBilling.Api.Controllers;
 public class BackupController(BackupExporter exporter, IConfiguration config, IWebHostEnvironment env) : StaffApiControllerBase
 {
     /// <summary>Everything for this business as one JSON file (passwords are never included).</summary>
+    [EnableRateLimiting("heavy")]
     [HttpGet("export")]
     public async Task<IActionResult> Export()
     {

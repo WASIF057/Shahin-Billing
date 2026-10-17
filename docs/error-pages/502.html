@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- The page asks the browser to look again every 30 seconds, so people are brought back by themselves when the server returns. -->
+  <meta http-equiv="refresh" content="30">
+  <meta name="robots" content="noindex">
+  <title>We'll be right back | Shahin Enterprises</title>
+  <style>
+    :root { --ink: #141c2e; --muted: #5d6a80; --navy: #2a5b8f; --gold: #e0a43f; --card: #ffffff; --bg1: #eaf1fa; --bg2: #fdf6e9; --line: #dde5f0; }
+    @media (prefers-color-scheme: dark) {
+      :root { --ink: #eef2f9; --muted: #a9b6cc; --navy: #7fb0e6; --card: #172236; --bg1: #0d1523; --bg2: #14243d; --line: #28364d; }
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: var(--ink); line-height: 1.6;
+      background: radial-gradient(900px 500px at 15% 10%, var(--bg1), transparent 65%), radial-gradient(800px 500px at 90% 95%, var(--bg2), transparent 65%), var(--bg1);
+      display: grid; place-items: center; padding: 24px;
+    }
+    .card { width: 100%; max-width: 520px; background: var(--card); border: 1px solid var(--line); border-radius: 24px; padding: 38px 34px 30px; text-align: center; box-shadow: 0 24px 60px rgba(20, 40, 90, 0.14); }
+    svg { width: 150px; height: auto; margin: -6px auto 6px; display: block; }
+    .zz { font-weight: 800; fill: var(--gold); opacity: 0; animation: rise 4.5s ease-in infinite; }
+    .zz.b { animation-delay: 1.5s; } .zz.c { animation-delay: 3s; }
+    @keyframes rise { 0% { opacity: 0; transform: translate(0, 8px); } 25% { opacity: 1; } 100% { opacity: 0; transform: translate(10px, -16px); } }
+    h1 { margin: 6px 0 8px; font-size: clamp(1.6rem, 5vw, 2.1rem); letter-spacing: -0.01em; }
+    p { margin: 0 0 10px; color: var(--muted); }
+    .btn { display: inline-block; margin-top: 12px; padding: 12px 26px; border-radius: 12px; background: var(--navy); color: #fff; font-weight: 700; text-decoration: none; }
+    @media (prefers-color-scheme: dark) { .btn { color: #0d1523; } }
+    .small { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 0.85rem; }
+    .small a { color: var(--navy); font-weight: 600; }
+    @media (prefers-reduced-motion: reduce) { .zz { animation: none; opacity: 0.8; } }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <!-- the sleeping mattress, drawn in plain SVG so this page needs nothing else to load -->
+    <svg viewBox="384 54 88 76" role="img" aria-label="A sleeping mattress">
+      <rect x="388" y="104" width="80" height="16" rx="3" fill="#1e2a5a"/>
+      <path d="M392,90 Q404,85 416,90 Q419,96 416,102 Q404,106 392,102 Q389,96 392,90 Z" fill="#f6d8c4" stroke="#1e2a5a" stroke-width="1.5"/>
+      <path d="M418,102 Q443,94 468,101 Q474,112 470,124 Q444,121 418,122 Z" fill="#e0a43f"/>
+      <text class="zz" x="422" y="82" font-size="14">z</text>
+      <text class="zz b" x="436" y="68" font-size="18">z</text>
+      <text class="zz c" x="448" y="58" font-size="14">z</text>
+    </svg>
+
+    <h1>We'll be right back</h1>
+    <p>The Shahin Enterprises billing site can't be reached at the moment. This is usually brief, for example while we update the system.</p>
+    <p>Anything you already saved is safe. This page will check again by itself, or you can try now.</p>
+    <a class="btn" href="javascript:location.reload()">Try again</a>
+
+    <p class="small">
+      Need something urgently? Call us on <a href="tel:9845845109">9845845109</a>.
+    </p>
+  </main>
+</body>
+</html>
