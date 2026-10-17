@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { TableSkeleton } from '../../shared/table-skeleton';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
@@ -12,7 +13,7 @@ import { Notify } from '../../core/notify.service';
 /** My orders: a client's own orders and where they stand. No prices. */
 @Component({
   selector: 'app-my-orders',
-  imports: [DatePipe, RouterLink, ButtonModule, TableModule, TagModule],
+  imports: [TableSkeleton, DatePipe, RouterLink, ButtonModule, TableModule, TagModule],
   template: `
     <div class="page">
       <div class="page-head">
@@ -24,7 +25,7 @@ import { Notify } from '../../core/notify.service';
       </div>
 
       <div class="panel">
-        <p-table [value]="orders()" [loading]="loading()" dataKey="id" [rowHover]="true">
+        <p-table [value]="orders()" [loading]="loading() && (orders()).length > 0" dataKey="id" [rowHover]="true">
           <ng-template #header>
             <tr><th style="width: 3rem"></th><th>Order</th><th>Placed</th><th>Location</th><th>Products</th><th>Status</th></tr>
           </ng-template>
@@ -55,11 +56,13 @@ import { Notify } from '../../core/notify.service';
             </tr>
           </ng-template>
           <ng-template #emptymessage>
+        @if (loading()) { <app-table-skeleton [cols]="6" /> } @else {
             <tr><td colspan="6">
               <div class="empty"><h3>No orders yet</h3><p>When you place an order, it will show up here.</p>
                 <a pButton routerLink="/portal" label="Order products" icon="pi pi-shopping-cart"></a></div>
             </td></tr>
-          </ng-template>
+        }
+      </ng-template>
         </p-table>
       </div>
     </div>

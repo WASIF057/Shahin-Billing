@@ -133,6 +133,17 @@
       }
     </section>
   } @else {
-    <div class="panel empty">Loading…</div>
+    <div class="dash-skeleton" role="status" aria-label="Loading the dashboard">
+      <div class="figures">
+        <p-skeleton height="146px" borderRadius="16px" />
+        <p-skeleton height="146px" borderRadius="16px" />
+      </div>
+      <div class="pay-tiles">
+        <p-skeleton height="96px" borderRadius="16px" />
+        <p-skeleton height="96px" borderRadius="16px" />
+        <p-skeleton height="96px" borderRadius="16px" />
+      </div>
+      <p-skeleton height="260px" borderRadius="16px" />
+    </div>
   }
 </div>

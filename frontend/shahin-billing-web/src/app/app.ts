@@ -3,14 +3,16 @@ import { RouterOutlet } from '@angular/router';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ThemeService } from './core/theme.service';
+import { ServerDown } from './shared/server-down';
 import { WelcomeOverlay } from './shared/welcome';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, ToastModule, ConfirmDialogModule, WelcomeOverlay],
+  imports: [RouterOutlet, ToastModule, ConfirmDialogModule, WelcomeOverlay, ServerDown],
   template: `
     <router-outlet />
     <app-welcome />
+    <app-server-down />
     <p-toast position="top-right" [breakpoints]="{ '640px': { width: '100%', right: '0', left: '0' } }" />
     <p-confirmdialog [style]="{ width: '26rem', maxWidth: '94vw' }" />
   `,

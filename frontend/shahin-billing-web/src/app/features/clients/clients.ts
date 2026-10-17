@@ -1,4 +1,5 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { TableSkeleton } from '../../shared/table-skeleton';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -30,7 +31,7 @@ const newClient = (): Client => ({
 
 @Component({
   selector: 'app-clients',
-  imports: [FormsModule, ButtonModule, DialogModule, InputTextModule, SelectModule, TableModule, TagModule, TextareaModule,
+  imports: [TableSkeleton, FormsModule, ButtonModule, DialogModule, InputTextModule, SelectModule, TableModule, TagModule, TextareaModule,
             CheckboxModule, AutoCompleteModule, ToggleSwitchModule, IconFieldModule, InputIconModule, TooltipModule, InrPipe],
   templateUrl: './clients.html',
   styles: `

@@ -1,6 +1,6 @@
 import { ApplicationConfig, inject, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { provideRouter, withComponentInputBinding, withViewTransitions } from '@angular/router';
+import { provideRouter, TitleStrategy, withComponentInputBinding, withViewTransitions } from '@angular/router';
 import { providePrimeNG } from 'primeng/config';
 import { Confirmation, ConfirmationService, MessageService } from 'primeng/api';
 import { definePreset } from '@primeuix/themes';
@@ -9,6 +9,7 @@ import { routes } from './app.routes';
 import { authInterceptor } from './core/auth.interceptor';
 import { AuthService } from './core/auth.service';
 import { Welcome } from './shared/welcome';
+import { PageTitleStrategy } from './core/page-title.strategy';
 
 /** PrimeNG theme: Aura with a deep "ticking-stripe" navy as the primary colour. */
 const ShahinPreset = definePreset(Aura, {
@@ -48,5 +49,6 @@ export const appConfig: ApplicationConfig = {
     }),
     MessageService,
     { provide: ConfirmationService, useClass: FriendlyConfirmation },
+    { provide: TitleStrategy, useClass: PageTitleStrategy },
   ],
 };

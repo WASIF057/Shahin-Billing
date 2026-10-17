@@ -1,4 +1,5 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { TableSkeleton } from '../../shared/table-skeleton';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -31,7 +32,7 @@ const newItem = (): Item => ({
 
 @Component({
   selector: 'app-items',
-  imports: [FormsModule, RouterLink, ButtonModule, DialogModule, InputTextModule, InputNumberModule, SelectModule, MultiSelectModule,
+  imports: [TableSkeleton, FormsModule, RouterLink, ButtonModule, DialogModule, InputTextModule, InputNumberModule, SelectModule, MultiSelectModule,
             TableModule, TagModule, ToggleSwitchModule, IconFieldModule, InputIconModule, TooltipModule, InrPipe],
   templateUrl: './items.html',
   styleUrl: './items.scss',

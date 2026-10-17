@@ -86,6 +86,9 @@
         </div>
       }
       <a class="acct" routerLink="/account" routerLinkActive="on" (click)="menuOpen.set(false)"><i class="pi pi-user"></i> My account</a>
+      <a class="acct" routerLink="/privacy" routerLinkActive="on" (click)="menuOpen.set(false)"><i class="pi pi-shield"></i> Privacy policy</a>
+      <a class="acct" routerLink="/terms" routerLinkActive="on" (click)="menuOpen.set(false)"><i class="pi pi-file"></i> Terms and conditions</a>
+      <a class="acct" routerLink="/cookies" routerLinkActive="on" (click)="menuOpen.set(false)"><i class="pi pi-info-circle"></i> Cookie policy</a>
       <button pButton type="button" label="Log out" icon="pi pi-sign-out" [text]="true" size="small"
               class="logout" (click)="auth.logout()"></button>
     </div>

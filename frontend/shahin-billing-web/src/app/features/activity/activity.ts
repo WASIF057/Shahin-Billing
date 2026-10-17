@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { TableSkeleton } from '../../shared/table-skeleton';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -20,7 +21,7 @@ const TYPE_SEVERITY: Record<string, 'info' | 'success' | 'warn' | 'secondary' | 
 /** Activity: who did what and when. Owner only. Entries are kept for a year. */
 @Component({
   selector: 'app-activity',
-  imports: [DatePipe, FormsModule, ButtonModule, DatePickerModule, SelectModule, TableModule, TagModule],
+  imports: [TableSkeleton, DatePipe, FormsModule, ButtonModule, DatePickerModule, SelectModule, TableModule, TagModule],
   template: `
     <div class="page">
       <div class="page-head">
@@ -41,7 +42,7 @@ const TYPE_SEVERITY: Record<string, 'info' | 'success' | 'warn' | 'secondary' | 
         </div>
 
         <p-table [value]="rows()" [lazy]="true" (onLazyLoad)="onLazy($event)" [paginator]="true" [rows]="pageSize"
-                 [totalRecords]="total()" [loading]="loading()" [rowsPerPageOptions]="[25, 50, 100]" dataKey="id" [rowHover]="true">
+                 [totalRecords]="total()" [loading]="loading() && (rows()).length > 0" [rowsPerPageOptions]="[25, 50, 100]" dataKey="id" [rowHover]="true">
           <ng-template #header>
             <tr><th>When</th><th>Who</th><th>What happened</th><th>Kind</th></tr>
           </ng-template>
@@ -54,8 +55,10 @@ const TYPE_SEVERITY: Record<string, 'info' | 'success' | 'warn' | 'secondary' | 
             </tr>
           </ng-template>
           <ng-template #emptymessage>
+        @if (loading()) { <app-table-skeleton [cols]="4" /> } @else {
             <tr><td colspan="4"><div class="empty"><h3>Nothing here</h3><p>No activity matches these filters.</p></div></td></tr>
-          </ng-template>
+        }
+      </ng-template>
         </p-table>
       </div>
     </div>

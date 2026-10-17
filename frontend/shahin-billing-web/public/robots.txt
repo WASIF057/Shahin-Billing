@@ -1,0 +1,4 @@
+# Shahin Billing is a private billing tool. Pages tell search engines not to list them (see the robots meta tag in index.html).
+# Crawlers are still allowed to read the pages, so that link previews (WhatsApp, email, Slack) can show the title and picture.
+User-agent: *
+Disallow: /api/

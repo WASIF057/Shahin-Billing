@@ -1,4 +1,5 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { TableSkeleton } from '../../shared/table-skeleton';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -24,7 +25,7 @@ import { Notify } from '../../core/notify.service';
 /** Orders: the bucket of orders clients placed on the ordering website, for the owner and staff. */
 @Component({
   selector: 'app-orders',
-  imports: [DatePipe, FormsModule, RouterLink, ButtonModule, CheckboxModule, DatePickerModule, DialogModule, IconFieldModule, InputIconModule, InputNumberModule, InputTextModule, SelectModule, TableModule, TagModule, TooltipModule],
+  imports: [TableSkeleton, DatePipe, FormsModule, RouterLink, ButtonModule, CheckboxModule, DatePickerModule, DialogModule, IconFieldModule, InputIconModule, InputNumberModule, InputTextModule, SelectModule, TableModule, TagModule, TooltipModule],
   template: `
     <div class="page">
       <div class="page-head">
@@ -49,7 +50,7 @@ import { Notify } from '../../core/notify.service';
         </div>
 
         <p-table [value]="rows()" [lazy]="true" (onLazyLoad)="onLazy($event)" [paginator]="true" [rows]="pageSize" [totalRecords]="total()"
-                 [loading]="loading()" [rowsPerPageOptions]="[25, 50, 100]" dataKey="id" [rowHover]="true">
+                 [loading]="loading() && (rows()).length > 0" [rowsPerPageOptions]="[25, 50, 100]" dataKey="id" [rowHover]="true">
           <ng-template #header>
             <tr><th>Order</th><th>Placed</th><th>Client</th><th>Products</th><th>Status</th><th></th></tr>
           </ng-template>
@@ -86,8 +87,10 @@ import { Notify } from '../../core/notify.service';
             </tr>
           </ng-template>
           <ng-template #emptymessage>
+        @if (loading()) { <app-table-skeleton [cols]="6" /> } @else {
             <tr><td colspan="6"><div class="empty"><h3>No orders</h3><p>Orders your clients place on the ordering website will appear here.</p></div></td></tr>
-          </ng-template>
+        }
+      </ng-template>
         </p-table>
       </div>
     </div>

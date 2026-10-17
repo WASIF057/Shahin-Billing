@@ -51,7 +51,7 @@ function playIntro(): boolean {
           </div></div>
         </div>
         <div class="foot">
-          <small>&copy; {{ year }} Shahin Billing &middot; Secure and private</small>
+          <small>&copy; {{ year }} Shahin Billing &middot; Secure and private &middot; <a routerLink="/privacy">Privacy policy</a> &middot; <a routerLink="/terms">Terms</a> &middot; <a routerLink="/cookies">Cookies</a></small>
           <button type="button" class="replay" (click)="replay()"><i class="pi pi-play"></i> Replay intro</button>
         </div>
       </section>

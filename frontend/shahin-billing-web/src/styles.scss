@@ -242,3 +242,17 @@ body .p-confirmdialog .p-dialog-footer .p-button { flex: 1; height: 44px; border
   ::view-transition-old(page), ::view-transition-new(page) { animation: none; }
   .page > * { animation: none; }
 }
+
+/* ---------- Reduced motion (catch-all) ---------- */
+/* For anyone whose device asks for less motion: nothing moves, spins, slides or fades for long, anywhere on the site.
+   (Many animations also have their own rule; this makes sure none is missed.) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+}

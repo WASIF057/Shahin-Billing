@@ -27,7 +27,7 @@ import { Notify } from '../../core/notify.service';
           <h1>Forgot your password?</h1>
           <p>No problem. We’ll email a 6-digit code to your business email, and you can choose a new password.</p>
         </div>
-        <small>Your data stays private to your account.</small>
+        <small>Your data stays private to your account. &middot; <a routerLink="/privacy">Privacy policy</a> &middot; <a routerLink="/terms">Terms</a> &middot; <a routerLink="/cookies">Cookies</a></small>
       </section>
       <section class="form-side">
         @if (step() === 1) {

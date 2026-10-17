@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { TableSkeleton } from '../../shared/table-skeleton';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
@@ -29,7 +30,7 @@ import { StatusTag } from '../../shared/status-tag';
 
 @Component({
   selector: 'app-bills-list',
-  imports: [FormsModule, DatePipe, RouterLink, ButtonModule, DatePickerModule, InputTextModule, SelectModule, TableModule,
+  imports: [TableSkeleton, FormsModule, DatePipe, RouterLink, ButtonModule, DatePickerModule, InputTextModule, SelectModule, TableModule,
             IconFieldModule, InputIconModule, MenuModule, TooltipModule, TagModule, DialogModule, InputNumberModule, SelectButtonModule, InrPipe, StatusTag],
   templateUrl: './bills-list.html',
   styles: `

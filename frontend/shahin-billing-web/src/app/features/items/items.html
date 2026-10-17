@@ -25,7 +25,7 @@
               [loading]="exporting()" (click)="exportItems()"></button>
     </div>
 
-    <p-table [value]="filtered()" [loading]="loading()" dataKey="id" [rowHover]="true" responsiveLayout="scroll">
+    <p-table [value]="filtered()" [loading]="loading() && (filtered()).length > 0" dataKey="id" [rowHover]="true" responsiveLayout="scroll">
       <ng-template #header>
         <tr>
           <th>Item</th><th>Type</th><th>Unit</th><th class="num">GST</th><th class="num">Default rate</th>
@@ -57,6 +57,7 @@
         </tr>
       </ng-template>
       <ng-template #emptymessage>
+        @if (loading()) { <app-table-skeleton [cols]="7" /> } @else {
         <tr><td colspan="7">
           <div class="empty">
             <h3>No items yet</h3>
@@ -64,6 +65,7 @@
             <button pButton type="button" label="Add your first item" icon="pi pi-plus" (click)="open()"></button>
           </div>
         </td></tr>
+        }
       </ng-template>
     </p-table>
   </div>

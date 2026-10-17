@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { TableSkeleton } from '../../shared/table-skeleton';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
@@ -23,7 +24,7 @@ const newType = (): ProductType => ({ id: '', name: '', category: '', usesVarian
  */
 @Component({
   selector: 'app-catalog',
-  imports: [FormsModule, RouterLink, ChipList, ButtonModule, DialogModule, InputTextModule, TableModule,
+  imports: [TableSkeleton, FormsModule, RouterLink, ChipList, ButtonModule, DialogModule, InputTextModule, TableModule,
             ToggleSwitchModule, TooltipModule],
   template: `
     <div class="page">
@@ -39,7 +40,7 @@ const newType = (): ProductType => ({ id: '', name: '', category: '', usesVarian
       </div>
 
       <div class="panel">
-        <p-table [value]="types()" [loading]="loading()" dataKey="id" [rowHover]="true">
+        <p-table [value]="types()" [loading]="loading() && (types()).length > 0" dataKey="id" [rowHover]="true">
           <ng-template #header>
             <tr><th>Type</th><th>Variants</th><th>Cloth</th><th>Sizes</th><th></th></tr>
           </ng-template>
@@ -66,6 +67,7 @@ const newType = (): ProductType => ({ id: '', name: '', category: '', usesVarian
             </tr>
           </ng-template>
           <ng-template #emptymessage>
+        @if (loading()) { <app-table-skeleton [cols]="5" /> } @else {
             <tr><td colspan="5">
               <div class="empty">
                 <h3>No types yet</h3>
@@ -73,7 +75,8 @@ const newType = (): ProductType => ({ id: '', name: '', category: '', usesVarian
                 <button pButton type="button" label="Add your first type" icon="pi pi-plus" (click)="open()"></button>
               </div>
             </td></tr>
-          </ng-template>
+        }
+      </ng-template>
         </p-table>
       </div>
     </div>

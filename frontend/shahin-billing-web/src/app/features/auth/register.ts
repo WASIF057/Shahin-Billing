@@ -42,7 +42,7 @@ import { errorMessage } from '../../core/errors';
             <span class="mock-badge"><i class="pi pi-check"></i> Paid</span>
           </div></div>
         </div>
-        <small>&copy; {{ year }} Shahin Billing &middot; Secure and private</small>
+        <small>&copy; {{ year }} Shahin Billing &middot; Secure and private &middot; <a routerLink="/privacy">Privacy policy</a> &middot; <a routerLink="/terms">Terms</a> &middot; <a routerLink="/cookies">Cookies</a></small>
       </section>
       <section class="form-side">
         @if (!challengeId()) {
@@ -85,6 +85,7 @@ import { errorMessage } from '../../core/errors';
               </div>
             </div>
             <button pButton type="submit" label="Create account" [loading]="busy()" [disabled]="f.invalid"></button>
+            <p class="consent">By creating an account you agree to our <a routerLink="/terms" target="_blank">Terms and conditions</a> and <a routerLink="/privacy" target="_blank">Privacy policy</a>.</p>
             <p class="alt">Already have an account? <a routerLink="/login">Log in</a></p>
           </form>
         } @else {

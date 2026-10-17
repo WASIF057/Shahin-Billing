@@ -7,9 +7,12 @@ const leaveBill = (c: BillEditor) => c.canLeave();
 
 // loadComponent = lazy loading: each screen's code downloads only when first opened.
 export const routes: Routes = [
-  { path: 'login', canActivate: [guestGuard], loadComponent: () => import('./features/auth/login').then(m => m.Login) },
-  { path: 'forgot-password', canActivate: [guestGuard], loadComponent: () => import('./features/auth/forgot-password').then(m => m.ForgotPassword) },
-  { path: 'register', canActivate: [guestGuard], loadComponent: () => import('./features/auth/register').then(m => m.Register) },
+  { path: 'login', title: 'Log in', canActivate: [guestGuard], loadComponent: () => import('./features/auth/login').then(m => m.Login) },
+  { path: 'forgot-password', title: 'Reset your password', canActivate: [guestGuard], loadComponent: () => import('./features/auth/forgot-password').then(m => m.ForgotPassword) },
+  { path: 'privacy', title: 'Privacy policy', loadComponent: () => import('./features/legal/privacy').then(m => m.PrivacyPage) },
+  { path: 'cookies', title: 'Cookie policy', loadComponent: () => import('./features/legal/cookies').then(m => m.CookiesPage) },
+  { path: 'terms', title: 'Terms and conditions', loadComponent: () => import('./features/legal/terms').then(m => m.TermsPage) },
+  { path: 'register', title: 'Create your account', canActivate: [guestGuard], loadComponent: () => import('./features/auth/register').then(m => m.Register) },
   {
     path: '',
     canActivate: [authGuard],
@@ -38,5 +41,5 @@ export const routes: Routes = [
       { path: 'settings', canActivate: [ownerGuard], title: 'My business', loadComponent: () => import('./features/settings/business-settings').then(m => m.BusinessSettings) },
     ],
   },
-  { path: '**', redirectTo: '' },
+  { path: '**', title: 'Page not found', loadComponent: () => import('./features/not-found/not-found').then(m => m.NotFoundPage) },
 ];

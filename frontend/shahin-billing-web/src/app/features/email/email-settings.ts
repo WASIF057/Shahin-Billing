@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { TableSkeleton } from '../../shared/table-skeleton';
 import { FormsModule } from '@angular/forms';
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -78,7 +79,7 @@ const fill = (text: string) => text.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k: strin
 /** Email tab: a list of named email templates, each with View, Edit, Delete and an Active switch. */
 @Component({
   selector: 'app-email-settings',
-  imports: [FormsModule, ButtonModule, CheckboxModule, DialogModule, InputTextModule, InputNumberModule, SelectModule, TableModule, TagModule,
+  imports: [TableSkeleton, FormsModule, ButtonModule, CheckboxModule, DialogModule, InputTextModule, InputNumberModule, SelectModule, TableModule, TagModule,
             TextareaModule, ToggleSwitchModule, TooltipModule],
   template: `
     <div class="page">
@@ -129,7 +130,7 @@ const fill = (text: string) => text.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k: strin
       </section>
 
       <div class="panel">
-        <p-table [value]="templates()" [loading]="loading()" dataKey="id" [rowHover]="true" responsiveLayout="scroll">
+        <p-table [value]="templates()" [loading]="loading() && (templates()).length > 0" dataKey="id" [rowHover]="true" responsiveLayout="scroll">
           <ng-template #header>
             <tr><th>Name</th><th>Sent to</th><th>Sent when</th><th>Subject</th><th>Active</th><th></th></tr>
           </ng-template>
@@ -155,6 +156,7 @@ const fill = (text: string) => text.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k: strin
             </tr>
           </ng-template>
           <ng-template #emptymessage>
+        @if (loading()) { <app-table-skeleton [cols]="6" /> } @else {
             <tr><td colspan="6">
               <div class="empty">
                 <h3>No email templates</h3>
@@ -162,7 +164,8 @@ const fill = (text: string) => text.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k: strin
                 <button pButton type="button" label="Create email template" icon="pi pi-plus" (click)="open()"></button>
               </div>
             </td></tr>
-          </ng-template>
+        }
+      </ng-template>
         </p-table>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { TableSkeleton } from '../../shared/table-skeleton';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Router, RouterLink } from '@angular/router';
@@ -16,7 +17,7 @@ import { Notify } from '../../core/notify.service';
 /** Bill format tab: a list of named PDF looks. The Active one is used for every PDF. */
 @Component({
   selector: 'app-bill-format-list',
-  imports: [FormsModule, RouterLink, ButtonModule, DialogModule, TableModule, TagModule, ToggleSwitchModule, TooltipModule],
+  imports: [TableSkeleton, FormsModule, RouterLink, ButtonModule, DialogModule, TableModule, TagModule, ToggleSwitchModule, TooltipModule],
   template: `
     <div class="page">
       <div class="page-head">
@@ -30,7 +31,7 @@ import { Notify } from '../../core/notify.service';
       </div>
 
       <div class="panel">
-        <p-table [value]="formats()" [loading]="loading()" dataKey="id" [rowHover]="true" responsiveLayout="scroll">
+        <p-table [value]="formats()" [loading]="loading() && (formats()).length > 0" dataKey="id" [rowHover]="true" responsiveLayout="scroll">
           <ng-template #header>
             <tr><th>Name</th><th>Layout</th><th>Colour</th><th>Text size</th><th>Copies</th><th>Active</th><th></th></tr>
           </ng-template>
@@ -56,8 +57,10 @@ import { Notify } from '../../core/notify.service';
             </tr>
           </ng-template>
           <ng-template #emptymessage>
+        @if (loading()) { <app-table-skeleton [cols]="7" /> } @else {
             <tr><td colspan="7"><div class="empty"><h3>No bill formats</h3><p>Create one to get started.</p></div></td></tr>
-          </ng-template>
+        }
+      </ng-template>
         </p-table>
       </div>
     </div>

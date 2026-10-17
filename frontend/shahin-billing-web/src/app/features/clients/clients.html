@@ -20,7 +20,7 @@
       </label>
     </div>
 
-    <p-table [value]="filtered()" [loading]="loading()" dataKey="id" [rowHover]="true">
+    <p-table [value]="filtered()" [loading]="loading() && (filtered()).length > 0" dataKey="id" [rowHover]="true">
       <ng-template #header>
         <tr><th>Client</th><th>GSTIN</th><th>City</th><th>State</th><th></th></tr>
       </ng-template>
@@ -48,6 +48,7 @@
         </tr>
       </ng-template>
       <ng-template #emptymessage>
+        @if (loading()) { <app-table-skeleton [cols]="5" /> } @else {
         <tr><td colspan="5">
           <div class="empty">
             <h3>No clients yet</h3>
@@ -55,6 +56,7 @@
             <button pButton type="button" label="Add your first client" icon="pi pi-plus" (click)="open()"></button>
           </div>
         </td></tr>
+        }
       </ng-template>
     </p-table>
   </div>
